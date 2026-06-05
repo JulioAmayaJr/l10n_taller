@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="seq_vidrios_order" model="ir.sequence">
+        <field name="name">Orden de Taller Vidrios Castillo</field>
+        <field name="code">vidrios.order</field>
+        <field name="prefix">T-</field>
+        <field name="padding">5</field>
+        <field name="number_next">1</field>
+        <field name="number_increment">1</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+</odoo>

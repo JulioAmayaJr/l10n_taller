@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Menú raíz de la aplicación -->
+    <menuitem id="menu_vidrios_root"
+              name="Taller Vidrios"
+              sequence="50"
+              web_icon="vidrios_castillo_taller,static/description/icon.png"
+              groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_vendedor,vidrios_castillo_taller.group_vidrios_taller,vidrios_castillo_taller.group_vidrios_caja"/>
+
+    <!-- Nivel 1: Órdenes -->
+    <menuitem id="menu_vidrios_ordenes"
+              name="Órdenes"
+              parent="menu_vidrios_root"
+              sequence="10"
+              groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_vendedor,vidrios_castillo_taller.group_vidrios_taller,vidrios_castillo_taller.group_vidrios_caja"/>
+
+    <menuitem id="menu_vidrios_ordenes_all"
+              name="Todas las Órdenes"
+              parent="menu_vidrios_ordenes"
+              action="action_vidrios_order"
+              sequence="10"/>
+
+    <menuitem id="menu_vidrios_ordenes_pendientes"
+              name="Órdenes Pendientes"
+              parent="menu_vidrios_ordenes"
+              action="action_vidrios_order_pendientes"
+              sequence="20"/>
+
+    <menuitem id="menu_vidrios_produccion"
+              name="Producción Pendiente"
+              parent="menu_vidrios_ordenes"
+              action="action_vidrios_order_produccion"
+              sequence="30"
+              groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_taller"/>
+
+    <!-- Nivel 1: Productos -->
+    <menuitem id="menu_vidrios_productos"
+              name="Productos"
+              parent="menu_vidrios_root"
+              sequence="20"
+              groups="vidrios_castillo_taller.group_vidrios_admin"/>
+
+    <menuitem id="menu_vidrios_productos_list"
+              name="Tipos de Producto"
+              parent="menu_vidrios_productos"
+              action="action_vidrios_product"
+              sequence="10"/>
+
+    <!-- Nivel 1: Anticipos -->
+    <menuitem id="menu_vidrios_anticipos"
+              name="Anticipos"
+              parent="menu_vidrios_root"
+              sequence="30"
+              groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_caja,vidrios_castillo_taller.group_vidrios_vendedor"/>
+
+    <menuitem id="menu_vidrios_anticipos_list"
+              name="Anticipos Recibidos"
+              parent="menu_vidrios_anticipos"
+              action="action_vidrios_anticipos"
+              sequence="10"/>
+
+</odoo>

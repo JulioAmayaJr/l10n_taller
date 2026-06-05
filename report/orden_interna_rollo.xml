@@ -1,0 +1,408 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        PAPERFORMAT: solo se usa si alguien imprime el PDF desde el menú Print.
+        Los botones de rollo en la orden abren HTML en nueva pestaña (act_url).
+        Para rollo 58mm: cambiar page_width=58.
+    -->
+    <record id="paperformat_rollo_80mm" model="report.paperformat">
+        <field name="name">Rollo Térmico 80mm</field>
+        <field name="default">False</field>
+        <field name="format">custom</field>
+        <field name="page_width">80</field>
+        <field name="page_height">400</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">3</field>
+        <field name="margin_bottom">3</field>
+        <field name="margin_left">3</field>
+        <field name="margin_right">3</field>
+        <field name="header_line">False</field>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <!-- Acciones report (vinculadas al modelo; disponibles en menú Print) -->
+    <record id="action_report_orden_interna_rollo" model="ir.actions.report">
+        <field name="name">Orden Interna Taller (Rollo 80mm)</field>
+        <field name="model">vidrios.order</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">vidrios_castillo_taller.report_orden_interna_rollo</field>
+        <field name="report_file">vidrios_castillo_taller.report_orden_interna_rollo</field>
+        <field name="print_report_name">'Taller_Rollo - ' + (object.name or '')</field>
+        <field name="paperformat_id" ref="paperformat_rollo_80mm"/>
+        <field name="binding_model_id" ref="model_vidrios_order"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_ticket_rollo" model="ir.actions.report">
+        <field name="name">Ticket Cliente (Rollo 80mm)</field>
+        <field name="model">vidrios.order</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">vidrios_castillo_taller.report_ticket_rollo</field>
+        <field name="report_file">vidrios_castillo_taller.report_ticket_rollo</field>
+        <field name="print_report_name">'TicketRollo - ' + (object.name or '')</field>
+        <field name="paperformat_id" ref="paperformat_rollo_80mm"/>
+        <field name="binding_model_id" ref="model_vidrios_order"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- ================================================================
+         PLANTILLA: Orden Interna Taller — Rollo 80mm
+         HTML puro, sin web.html_container ni web.external_layout.
+         Se abre en el navegador vía /report/html/... y dispara window.print().
+    ================================================================ -->
+    <template id="report_orden_interna_rollo">
+        <html>
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <title>Orden Taller</title>
+                <style>
+                    /* Impresion termica */
+                    @page { size: 80mm auto; margin: 3mm; }
+                    @media print {
+                        body { width: 74mm; margin: 0; }
+                        .no-print { display: none !important; }
+                    }
+                    * { box-sizing: border-box; }
+                    html, body {
+                        margin: 0; padding: 0;
+                        background: #fff; color: #000;
+                        font-family: 'Courier New', Courier, monospace;
+                        font-size: 12px;
+                        line-height: 1.45;
+                    }
+                    .rollo {
+                        width: 74mm;
+                        max-width: 74mm;
+                        margin: 0 auto;
+                        padding: 2px;
+                    }
+                    .rc  { text-align: center; }
+                    .rb  { font-weight: bold; }
+                    .rbi { font-size: 13px; font-weight: bold; }
+                    hr.sep  { border: none; border-top: 1px dashed #000; margin: 4px 0; }
+                    hr.sep2 { border: none; border-top: 2px solid  #000; margin: 4px 0; }
+                    .row {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: baseline;
+                        margin: 1px 0;
+                    }
+                    .rn { flex: 1; overflow: hidden; white-space: nowrap; }
+                    .rv { flex-shrink: 0; padding-left: 4px; font-weight: bold; text-align: right; }
+                    .prod   { font-weight: bold; font-size: 13px; margin-top: 4px; }
+                    .meds   { font-size: 11px; color: #333; }
+                    .pieza  { margin-left: 4px; }
+                    .tot {
+                        display: flex;
+                        justify-content: space-between;
+                        font-weight: bold;
+                        margin: 2px 0;
+                    }
+                    .xs { font-size: 11px; }
+                    .it { font-style: italic; }
+                </style>
+            </head>
+            <body>
+                <t t-foreach="docs" t-as="order">
+                    <div class="rollo">
+
+                        <div class="rc rbi"><t t-esc="order.company_id.name or 'Vidrios Castillo'"/></div>
+                        <div class="rc rb">ORDEN INTERNA TALLER</div>
+                        <div class="rc rbi"><t t-esc="order.name"/></div>
+                        <hr class="sep2"/>
+
+                        <div class="row">
+                            <span class="rn">Estado</span>
+                            <span class="rv"><t t-esc="order.get_state_label()"/></span>
+                        </div>
+                        <div class="row">
+                            <span class="rn">Cliente</span>
+                            <span class="rv"><t t-esc="order.get_display_name() or '-'"/></span>
+                        </div>
+                        <t t-if="order.get_display_phone()">
+                            <div class="row">
+                                <span class="rn">Tel</span>
+                                <span class="rv"><t t-esc="order.get_display_phone()"/></span>
+                            </div>
+                        </t>
+                        <t t-if="order.delivery_date">
+                            <div class="row">
+                                <span class="rn">Entrega</span>
+                                <span class="rv">
+                                    <span t-esc="order.delivery_date" t-options='{"widget":"date"}'/>
+                                </span>
+                            </div>
+                        </t>
+
+                        <t t-foreach="order.line_ids" t-as="line">
+                            <hr class="sep2"/>
+                            <div class="prod">
+                                <t t-esc="line_index + 1"/>. <t t-esc="line.product_id.name"/>
+                                <span style="font-weight:normal;font-size:11px;"> (x<t t-esc="line.quantity"/>)</span>
+                            </div>
+                            <div class="meds">
+                                A:<t t-esc="line.width"/>cm
+                                H:<t t-esc="line.height"/>cm
+                                <t t-if="line.depth"> P:<t t-esc="line.depth"/>cm</t>
+                            </div>
+
+                            <t t-if="line.characteristic_value_ids">
+                                <t t-foreach="line.characteristic_value_ids" t-as="cv">
+                                    <t t-if="cv.get_display_value()">
+                                        <div class="xs" style="margin-left:4px;">
+                                            <t t-esc="cv.char_name"/>: <t t-esc="cv.get_display_value()"/>
+                                        </div>
+                                    </t>
+                                </t>
+                            </t>
+
+                            <t t-if="line.notes">
+                                <div class="xs it" style="margin-left:4px;"><t t-esc="line.notes"/></div>
+                            </t>
+
+                            <t t-set="cutlist" t-value="line.get_cutlist()"/>
+                            <t t-if="cutlist">
+                                <hr class="sep"/>
+                                <div class="xs rc" style="letter-spacing:1px;">-- DESPIECE --</div>
+                                <t t-foreach="cutlist" t-as="cut">
+                                    <div class="row pieza">
+                                        <span class="rn"><t t-esc="cut['name']"/></span>
+                                        <span class="rv">
+                                            <t t-if="cut.get('cut_width') is not None">
+                                                <t t-esc="cut['quantity']"/>x
+                                                <t t-esc="cut['cut_width']"/>x<t t-esc="cut['cut_height']"/>cm
+                                            </t>
+                                            <t t-elif="cut['unit'] == 'uds'">
+                                                <t t-esc="cut['quantity']"/> uds
+                                            </t>
+                                            <t t-elif="cut['size'] is not None">
+                                                <t t-esc="cut['quantity']"/>x
+                                                <t t-esc="cut['size']"/> <t t-esc="cut['unit']"/>
+                                            </t>
+                                            <t t-else="">
+                                                <t t-esc="cut['quantity']"/> uds
+                                            </t>
+                                        </span>
+                                    </div>
+                                </t>
+                            </t>
+                        </t>
+
+                        <t t-if="order.extra_ids">
+                            <hr class="sep2"/>
+                            <div class="rb xs">EXTRAS</div>
+                            <t t-foreach="order.extra_ids" t-as="extra">
+                                <div class="row">
+                                    <span class="rn"><t t-esc="extra.name"/></span>
+                                    <span class="rv">
+                                        <t t-esc="extra.price"
+                                           t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                    </span>
+                                </div>
+                            </t>
+                        </t>
+
+                        <t t-if="order.notes">
+                            <hr class="sep"/>
+                            <div class="xs it">Obs: <t t-esc="order.notes"/></div>
+                        </t>
+
+                        <hr class="sep2"/>
+                        <div class="tot">
+                            <span>Total</span>
+                            <span>
+                                <t t-esc="order.amount_total"
+                                   t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                            </span>
+                        </div>
+                        <div class="row">
+                            <span class="rn">Anticipo</span>
+                            <span class="rv">
+                                <t t-esc="order.amount_paid"
+                                   t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                            </span>
+                        </div>
+                        <div class="tot" style="font-size:13px;border-top:1px solid #000;padding-top:2px;">
+                            <span>SALDO</span>
+                            <span>
+                                <t t-esc="order.amount_due"
+                                   t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                            </span>
+                        </div>
+
+                        <hr class="sep"/>
+                        <div class="rc xs">*** FIN DE ORDEN ***</div>
+
+                    </div>
+                </t>
+                <script>window.addEventListener('load', function(){ window.print(); });</script>
+            </body>
+        </html>
+    </template>
+
+    <!-- ================================================================
+         PLANTILLA: Ticket Cliente — Rollo 80mm
+         Sin medidas ni despiece. Solo producto, caracteristicas
+         visibles en ticket, totales y fecha de entrega.
+    ================================================================ -->
+    <template id="report_ticket_rollo">
+        <html>
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <title>Ticket Cliente</title>
+                <style>
+                    @page { size: 80mm auto; margin: 3mm; }
+                    @media print {
+                        body { width: 74mm; margin: 0; }
+                        .no-print { display: none !important; }
+                    }
+                    * { box-sizing: border-box; }
+                    html, body {
+                        margin: 0; padding: 0;
+                        background: #fff; color: #000;
+                        font-family: 'Courier New', Courier, monospace;
+                        font-size: 12px;
+                        line-height: 1.45;
+                    }
+                    .rollo { width: 74mm; max-width: 74mm; margin: 0 auto; padding: 2px; }
+                    .rc  { text-align: center; }
+                    .rb  { font-weight: bold; }
+                    .rbi { font-size: 13px; font-weight: bold; }
+                    hr.sep  { border: none; border-top: 1px dashed #000; margin: 4px 0; }
+                    hr.sep2 { border: none; border-top: 2px solid  #000; margin: 4px 0; }
+                    .row {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: baseline;
+                        margin: 1px 0;
+                    }
+                    .rn { flex: 1; overflow: hidden; white-space: nowrap; }
+                    .rv { flex-shrink: 0; padding-left: 4px; font-weight: bold; text-align: right; }
+                    .prod { font-weight: bold; font-size: 13px; margin-top: 4px; }
+                    .tot  { display: flex; justify-content: space-between; font-weight: bold; margin: 2px 0; }
+                    .xs   { font-size: 11px; }
+                    .it   { font-style: italic; }
+                </style>
+            </head>
+            <body>
+                <t t-foreach="docs" t-as="order">
+                    <div class="rollo">
+
+                        <div class="rc rbi"><t t-esc="order.company_id.name or 'Vidrios Castillo'"/></div>
+                        <div class="rc">COMPROBANTE DE PEDIDO</div>
+                        <div class="rc rbi"><t t-esc="order.name"/></div>
+                        <hr class="sep2"/>
+
+                        <div class="row">
+                            <span class="rn">Cliente</span>
+                            <span class="rv"><t t-esc="order.get_display_name() or '-'"/></span>
+                        </div>
+                        <t t-if="order.get_display_phone()">
+                            <div class="row">
+                                <span class="rn">Tel</span>
+                                <span class="rv"><t t-esc="order.get_display_phone()"/></span>
+                            </div>
+                        </t>
+                        <t t-if="order.delivery_date">
+                            <div class="row">
+                                <span class="rn">Entrega</span>
+                                <span class="rv">
+                                    <span t-esc="order.delivery_date" t-options='{"widget":"date"}'/>
+                                </span>
+                            </div>
+                        </t>
+
+                        <t t-foreach="order.line_ids" t-as="line">
+                            <hr class="sep2"/>
+                            <div class="prod">
+                                <t t-esc="line.product_id.name"/>
+                                <span style="font-weight:normal;"> x<t t-esc="line.quantity"/></span>
+                            </div>
+                            <t t-foreach="line.characteristic_value_ids" t-as="cv">
+                                <t t-if="cv.visible_on_ticket and cv.get_display_value()">
+                                    <div class="xs" style="margin-left:4px;">
+                                        <t t-esc="cv.get_ticket_label()"/>: <t t-esc="cv.get_display_value()"/>
+                                    </div>
+                                </t>
+                            </t>
+                            <t t-if="line.notes">
+                                <div class="xs it" style="margin-left:4px;"><t t-esc="line.notes"/></div>
+                            </t>
+                            <div class="row" style="margin-top:2px;">
+                                <span></span>
+                                <span class="rv">
+                                    <t t-esc="line.price_subtotal"
+                                       t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                </span>
+                            </div>
+                        </t>
+
+                        <t t-if="order.extra_ids">
+                            <hr class="sep"/>
+                            <t t-foreach="order.extra_ids" t-as="extra">
+                                <div class="row">
+                                    <span class="rn"><t t-esc="extra.name"/></span>
+                                    <span class="rv">
+                                        <t t-esc="extra.price"
+                                           t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                    </span>
+                                </div>
+                            </t>
+                        </t>
+
+                        <hr class="sep2"/>
+                        <t t-if="order.apply_tax">
+                            <div class="row">
+                                <span class="rn">Subtotal</span>
+                                <span class="rv">
+                                    <t t-esc="order.amount_untaxed"
+                                       t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                </span>
+                            </div>
+                            <div class="row">
+                                <span class="rn">IVA (<t t-esc="order.tax_rate"/>%)</span>
+                                <span class="rv">
+                                    <t t-esc="order.amount_tax"
+                                       t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                </span>
+                            </div>
+                        </t>
+                        <div class="tot">
+                            <span>TOTAL</span>
+                            <span>
+                                <t t-esc="order.amount_total"
+                                   t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                            </span>
+                        </div>
+                        <div class="row">
+                            <span class="rn">Anticipo</span>
+                            <span class="rv">
+                                <t t-esc="order.amount_paid"
+                                   t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                            </span>
+                        </div>
+                        <div class="tot" style="font-size:13px;border-top:1px solid #000;padding-top:2px;">
+                            <span>SALDO</span>
+                            <span>
+                                <t t-esc="order.amount_due"
+                                   t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                            </span>
+                        </div>
+
+                        <hr class="sep"/>
+                        <div class="rc xs">
+                            Este comprobante no incluye medidas ni detalles tecnicos.
+                        </div>
+
+                    </div>
+                </t>
+                <script>window.addEventListener('load', function(){ window.print(); });</script>
+            </body>
+        </html>
+    </template>
+
+</odoo>

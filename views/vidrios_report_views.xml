@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Vista pivot/list de anticipos -->
+    <record id="view_vidrios_payment_list" model="ir.ui.view">
+        <field name="name">vidrios.payment.list</field>
+        <field name="model">account.payment</field>
+        <field name="arch" type="xml">
+            <list string="Anticipos de Taller" decoration-muted="state == 'cancel'">
+                <field name="date" string="Fecha"/>
+                <field name="vidrios_order_id" string="Orden"/>
+                <field name="partner_id" string="Cliente"/>
+                <field name="memo" string="Referencia"/>
+                <field name="journal_id" string="Caja"/>
+                <field name="amount" string="Monto"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!-- ========== PRODUCTO: VENTANA ========== -->
+    <record id="product_ventana" model="vidrios.product">
+        <field name="name">Ventana</field>
+        <field name="price_m2">120.00</field>
+        <field name="min_price">25.00</field>
+    </record>
+
+    <!-- Características de Ventana -->
+    <record id="char_ventana_color" model="vidrios.characteristic">
+        <field name="product_id" ref="product_ventana"/>
+        <field name="name">Color de perfil</field>
+        <field name="sequence">10</field>
+        <field name="field_type">select</field>
+        <field name="selection_values">Bronce,Natural,Blanco,Negro</field>
+        <field name="visible_on_ticket">True</field>
+        <field name="ticket_label">Color</field>
+    </record>
+
+    <record id="char_ventana_tipo_vidrio" model="vidrios.characteristic">
+        <field name="product_id" ref="product_ventana"/>
+        <field name="name">Tipo de vidrio</field>
+        <field name="sequence">20</field>
+        <field name="field_type">select</field>
+        <field name="selection_values">Claro 3mm,Claro 4mm,Claro 6mm,Bronce 4mm,Reflectivo</field>
+        <field name="visible_on_ticket">True</field>
+        <field name="ticket_label">Vidrio</field>
+    </record>
+
+    <record id="char_ventana_tipo_apertura" model="vidrios.characteristic">
+        <field name="product_id" ref="product_ventana"/>
+        <field name="name">Tipo de apertura</field>
+        <field name="sequence">30</field>
+        <field name="field_type">select</field>
+        <field name="selection_values">Corrediza,Batiente,Fija,Proyectante</field>
+        <field name="visible_on_ticket">False</field>
+    </record>
+
+    <record id="char_ventana_mosquitero" model="vidrios.characteristic">
+        <field name="product_id" ref="product_ventana"/>
+        <field name="name">Incluye mosquitero</field>
+        <field name="sequence">40</field>
+        <field name="field_type">boolean</field>
+        <field name="visible_on_ticket">True</field>
+        <field name="ticket_label">Mosquitero</field>
+    </record>
+
+    <record id="char_ventana_hojas" model="vidrios.characteristic">
+        <field name="product_id" ref="product_ventana"/>
+        <field name="name">Número de hojas</field>
+        <field name="sequence">50</field>
+        <field name="field_type">select</field>
+        <field name="selection_values">1,2,3,4</field>
+        <field name="visible_on_ticket">False</field>
+    </record>
+
+    <!-- Fórmulas de despiece: Ventana corrediza 2 hojas -->
+    <record id="formula_ventana_riel_sup" model="vidrios.formula">
+        <field name="product_id" ref="product_ventana"/>
+        <field name="name">Riel superior</field>
+        <field name="sequence">10</field>
+        <field name="material_type">profile</field>
+        <field name="base_dimension">width</field>
+        <field name="divisor">1</field>
+        <field name="addition">0</field>
+        <field name="deduction">0</field>
+        <field name="quantity">1</field>
+    </record>
+
+    <record id="formula_ventana_riel_inf" model="vidrios.formula">
+        <field name="product_id" ref="product_ventana"/>
+        <field name="name">Riel inferior</field>
+        <field name="sequence">20</field>
+        <field name="material_type">profile</field>
+        <field name="base_dimension">width</field>
+        <field name="divisor">1</field>
+        <field name="addition">0</field>
+        <field name="deduction">0</field>
+        <field name="quantity">1</field>
+    </record>
+
+    <record id="formula_ventana_jamba_izq" model="vidrios.formula">
+        <field name="product_id" ref="product_ventana"/>
+        <field name="name">Jamba izquierda</field>
+        <field name="sequence">30</field>
+        <field name="material_type">profile</field>
+        <field name="base_dimension">height</field>
+        <field name="divisor">1</field>
+        <field name="addition">0</field>
+        <field name="deduction">0</field>
+        <field name="quantity">1</field>
+    </record>
+
+    <record id="formula_ventana_jamba_der" model="vidrios.formula">
+        <field name="product_id" ref="product_ventana"/>
+        <field name="name">Jamba derecha</field>
+        <field name="sequence">40</field>
+        <field name="material_type">profile</field>
+        <field name="base_dimension">height</field>
+        <field name="divisor">1</field>
+        <field name="addition">0</field>
+        <field name="deduction">0</field>
+        <field name="quantity">1</field>
+    </record>
+
+    <record id="formula_ventana_hoja_h" model="vidrios.formula">
+        <field name="product_id" ref="product_ventana"/>
+        <field name="name">Horizontal de hoja</field>
+        <field name="sequence">50</field>
+        <field name="material_type">profile</field>
+        <field name="base_dimension">width</field>
+        <field name="divisor">2</field>
+        <field name="addition">0</field>
+        <field name="deduction">1.5</field>
+        <field name="quantity">4</field>
+        <field name="notes">2 hojas × 2 horizontales</field>
+    </record>
+
+    <record id="formula_ventana_hoja_v" model="vidrios.formula">
+        <field name="product_id" ref="product_ventana"/>
+        <field name="name">Vertical de hoja</field>
+        <field name="sequence">60</field>
+        <field name="material_type">profile</field>
+        <field name="base_dimension">height</field>
+        <field name="divisor">1</field>
+        <field name="addition">0</field>
+        <field name="deduction">3</field>
+        <field name="quantity">4</field>
+        <field name="notes">2 hojas × 2 verticales</field>
+    </record>
+
+    <record id="formula_ventana_vidrio" model="vidrios.formula">
+        <field name="product_id" ref="product_ventana"/>
+        <field name="name">Vidrio por hoja</field>
+        <field name="sequence">70</field>
+        <field name="material_type">glass</field>
+        <field name="base_dimension">width</field>
+        <field name="divisor">2</field>
+        <field name="addition">0</field>
+        <field name="deduction">2</field>
+        <field name="quantity">2</field>
+        <field name="notes">Medida de alto: altura - 4 cm</field>
+    </record>
+
+    <!-- ========== PRODUCTO: VITRINA ========== -->
+    <record id="product_vitrina" model="vidrios.product">
+        <field name="name">Vitrina</field>
+        <field name="price_m2">180.00</field>
+        <field name="min_price">80.00</field>
+    </record>
+
+    <record id="char_vitrina_color" model="vidrios.characteristic">
+        <field name="product_id" ref="product_vitrina"/>
+        <field name="name">Color de perfil</field>
+        <field name="sequence">10</field>
+        <field name="field_type">select</field>
+        <field name="selection_values">Bronce,Natural,Negro</field>
+        <field name="visible_on_ticket">True</field>
+        <field name="ticket_label">Color</field>
+    </record>
+
+    <record id="char_vitrina_descripcion" model="vidrios.characteristic">
+        <field name="product_id" ref="product_vitrina"/>
+        <field name="name">Descripción especial</field>
+        <field name="sequence">20</field>
+        <field name="field_type">char</field>
+        <field name="visible_on_ticket">True</field>
+        <field name="ticket_label">Detalle</field>
+    </record>
+
+    <record id="char_vitrina_puertas" model="vidrios.characteristic">
+        <field name="product_id" ref="product_vitrina"/>
+        <field name="name">Número de puertas</field>
+        <field name="sequence">30</field>
+        <field name="field_type">select</field>
+        <field name="selection_values">1,2,3,4</field>
+        <field name="visible_on_ticket">False</field>
+    </record>
+
+    <record id="formula_vitrina_marco_h" model="vidrios.formula">
+        <field name="product_id" ref="product_vitrina"/>
+        <field name="name">Marco horizontal</field>
+        <field name="sequence">10</field>
+        <field name="material_type">profile</field>
+        <field name="base_dimension">width</field>
+        <field name="divisor">1</field>
+        <field name="deduction">0</field>
+        <field name="quantity">2</field>
+    </record>
+
+    <record id="formula_vitrina_marco_v" model="vidrios.formula">
+        <field name="product_id" ref="product_vitrina"/>
+        <field name="name">Marco vertical</field>
+        <field name="sequence">20</field>
+        <field name="material_type">profile</field>
+        <field name="base_dimension">height</field>
+        <field name="divisor">1</field>
+        <field name="deduction">0</field>
+        <field name="quantity">2</field>
+    </record>
+
+    <record id="formula_vitrina_vidrio" model="vidrios.formula">
+        <field name="product_id" ref="product_vitrina"/>
+        <field name="name">Vidrio frontal</field>
+        <field name="sequence">30</field>
+        <field name="material_type">glass</field>
+        <field name="base_dimension">width</field>
+        <field name="divisor">1</field>
+        <field name="deduction">1</field>
+        <field name="quantity">1</field>
+    </record>
+
+    <!-- ========== PRODUCTO: PECERA ========== -->
+    <record id="product_pecera" model="vidrios.product">
+        <field name="name">Pecera / Acuario</field>
+        <field name="price_m2">95.00</field>
+        <field name="min_price">40.00</field>
+    </record>
+
+    <record id="char_pecera_espesor" model="vidrios.characteristic">
+        <field name="product_id" ref="product_pecera"/>
+        <field name="name">Espesor del vidrio</field>
+        <field name="sequence">10</field>
+        <field name="field_type">select</field>
+        <field name="selection_values">4mm,6mm,8mm,10mm,12mm</field>
+        <field name="visible_on_ticket">True</field>
+        <field name="ticket_label">Espesor</field>
+    </record>
+
+    <record id="char_pecera_silicona" model="vidrios.characteristic">
+        <field name="product_id" ref="product_pecera"/>
+        <field name="name">Color de silicona</field>
+        <field name="sequence">20</field>
+        <field name="field_type">select</field>
+        <field name="selection_values">Transparente,Negro,Blanco</field>
+        <field name="visible_on_ticket">True</field>
+        <field name="ticket_label">Silicona</field>
+    </record>
+
+    <record id="char_pecera_tapa" model="vidrios.characteristic">
+        <field name="product_id" ref="product_pecera"/>
+        <field name="name">Incluye tapa</field>
+        <field name="sequence">30</field>
+        <field name="field_type">boolean</field>
+        <field name="visible_on_ticket">True</field>
+        <field name="ticket_label">Con tapa</field>
+    </record>
+
+    <!-- ========== PRODUCTO: ESPEJO ========== -->
+    <record id="product_espejo" model="vidrios.product">
+        <field name="name">Espejo</field>
+        <field name="price_m2">85.00</field>
+        <field name="min_price">15.00</field>
+    </record>
+
+    <record id="char_espejo_tipo" model="vidrios.characteristic">
+        <field name="product_id" ref="product_espejo"/>
+        <field name="name">Tipo de espejo</field>
+        <field name="sequence">10</field>
+        <field name="field_type">select</field>
+        <field name="selection_values">Normal,Biselado,Con marco,Sin marco</field>
+        <field name="visible_on_ticket">True</field>
+        <field name="ticket_label">Tipo</field>
+    </record>
+
+    <record id="char_espejo_espesor" model="vidrios.characteristic">
+        <field name="product_id" ref="product_espejo"/>
+        <field name="name">Espesor</field>
+        <field name="sequence">20</field>
+        <field name="field_type">select</field>
+        <field name="selection_values">3mm,4mm,6mm</field>
+        <field name="visible_on_ticket">False</field>
+    </record>
+
+    <record id="char_espejo_observacion" model="vidrios.characteristic">
+        <field name="product_id" ref="product_espejo"/>
+        <field name="name">Observaciones</field>
+        <field name="sequence">30</field>
+        <field name="field_type">char</field>
+        <field name="visible_on_ticket">False</field>
+    </record>
+
+    <!-- ========== PRODUCTO: VENTANA FRANCESA ========== -->
+    <record id="product_ventana_francesa" model="vidrios.product">
+        <field name="name">Ventana Francesa</field>
+        <field name="price_m2">150.00</field>
+        <field name="min_price">35.00</field>
+    </record>
+
+    <record id="char_vf_color" model="vidrios.characteristic">
+        <field name="product_id" ref="product_ventana_francesa"/>
+        <field name="name">Color de perfil</field>
+        <field name="sequence">10</field>
+        <field name="field_type">select</field>
+        <field name="selection_values">Bronce,Natural,Blanco,Negro</field>
+        <field name="visible_on_ticket">True</field>
+        <field name="ticket_label">Color</field>
+    </record>
+
+    <record id="char_vf_tipo_vidrio" model="vidrios.characteristic">
+        <field name="product_id" ref="product_ventana_francesa"/>
+        <field name="name">Tipo de vidrio</field>
+        <field name="sequence">20</field>
+        <field name="field_type">select</field>
+        <field name="selection_values">Claro 4mm,Claro 6mm,Bronce 4mm</field>
+        <field name="visible_on_ticket">True</field>
+        <field name="ticket_label">Vidrio</field>
+    </record>
+
+    <!-- Felpa: linear, largo = (2*ancho + 2*alto)/100 metros -->
+    <record id="formula_vf_felpa" model="vidrios.formula">
+        <field name="product_id" ref="product_ventana_francesa"/>
+        <field name="name">Felpa</field>
+        <field name="sequence">10</field>
+        <field name="material_type">linear</field>
+        <field name="width_coef">2.0</field>
+        <field name="height_coef">2.0</field>
+        <field name="linear_constant">0.0</field>
+        <field name="quantity">1</field>
+    </record>
+
+    <!-- Baquelita: linear, largo = (3*ancho + 6*alto)/100 metros -->
+    <record id="formula_vf_baquelita" model="vidrios.formula">
+        <field name="product_id" ref="product_ventana_francesa"/>
+        <field name="name">Baquelita</field>
+        <field name="sequence">20</field>
+        <field name="material_type">linear</field>
+        <field name="width_coef">3.0</field>
+        <field name="height_coef">6.0</field>
+        <field name="linear_constant">0.0</field>
+        <field name="quantity">1</field>
+    </record>
+
+    <!-- Rodo: herraje, 2 unidades fijas -->
+    <record id="formula_vf_rodo" model="vidrios.formula">
+        <field name="product_id" ref="product_ventana_francesa"/>
+        <field name="name">Rodo</field>
+        <field name="sequence">30</field>
+        <field name="material_type">hardware</field>
+        <field name="base_dimension">fixed</field>
+        <field name="quantity">2</field>
+    </record>
+
+    <!-- Cerrador: herraje, 1 unidad fija -->
+    <record id="formula_vf_cerrador" model="vidrios.formula">
+        <field name="product_id" ref="product_ventana_francesa"/>
+        <field name="name">Cerrador</field>
+        <field name="sequence">40</field>
+        <field name="material_type">hardware</field>
+        <field name="base_dimension">fixed</field>
+        <field name="quantity">1</field>
+    </record>
+
+</odoo>

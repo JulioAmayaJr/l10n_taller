@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_report_orden_interna" model="ir.actions.report">
+        <field name="name">Orden Interna de Taller</field>
+        <field name="model">vidrios.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vidrios_castillo_taller.report_orden_interna</field>
+        <field name="report_file">vidrios_castillo_taller.report_orden_interna</field>
+        <field name="print_report_name">'HojaEnsamble - ' + (object.name or '')</field>
+        <field name="paperformat_id" ref="base.paperformat_euro"/>
+        <field name="binding_model_id" ref="model_vidrios_order"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- ================================================================
+         HOJA DE ENSAMBLE — formato A4/Carta, densa, estilo produccion.
+         Una seccion por cada linea de la orden.
+    ================================================================ -->
+    <template id="report_orden_interna">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="order">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <style>
+                            /* ---- Reset de pagina para densidad maxima ---- */
+                            .page { font-size: 9pt !important; line-height: 1.3; padding: 0 !important; }
+
+                            /* ---- Utilidades generales ---- */
+                            .asm-bold { font-weight: bold; }
+                            .asm-center { text-align: center; }
+                            .asm-right { text-align: right; }
+                            .asm-gray-bg { background-color: #e8e8e8; }
+                            .asm-hr { border: none; border-top: 2px solid #333; margin: 5px 0; }
+                            .asm-hr-thin { border: none; border-top: 1px solid #aaa; margin: 4px 0; }
+
+                            /* ---- ENCABEZADO DOCUMENTO (3 zonas) ---- */
+                            .asm-docheader {
+                                display: flex;
+                                align-items: flex-start;
+                                gap: 6px;
+                                margin-bottom: 4px;
+                            }
+                            .asm-dh-left  { flex: 0 0 34%; }
+                            .asm-dh-center { flex: 1; text-align: center; }
+                            .asm-dh-right { flex: 0 0 22%; }
+                            .asm-dh-left img {
+                                max-height: 48px;
+                                max-width: 130px;
+                                object-fit: contain;
+                                display: block;
+                            }
+                            .asm-dh-left .asm-order-ref {
+                                font-size: 8pt;
+                                margin-top: 3px;
+                                font-weight: bold;
+                            }
+                            .asm-dh-center h2 {
+                                font-size: 16pt;
+                                font-style: italic;
+                                font-weight: bold;
+                                margin: 0;
+                                padding: 0;
+                            }
+                            .asm-dh-center .asm-subtitle {
+                                font-size: 9pt;
+                                margin-top: 2px;
+                            }
+                            .asm-info-box {
+                                border: 1px solid #555;
+                                border-radius: 5px;
+                                padding: 4px 6px;
+                                font-size: 7.5pt;
+                                line-height: 1.5;
+                            }
+                            .asm-info-box b { display: inline-block; min-width: 52px; }
+
+                            /* ---- SALTOS DE PAGINA POR ARTICULO ---- */
+                            .asm-article-block {
+                                page-break-inside: avoid;
+                            }
+                            .asm-article-block + .asm-article-block {
+                                page-break-before: always;
+                            }
+                            .asm-main-tbl {
+                                page-break-inside: avoid;
+                            }
+
+                            /* ---- SECCION POR LINEA: fila de articulo ---- */
+                            .asm-article-row {
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: flex-start;
+                                background-color: #f5f5f5;
+                                border: 1px solid #bbb;
+                                padding: 3px 6px;
+                                margin: 5px 0 3px;
+                            }
+                            .asm-correlativo {
+                                font-size: 9pt;
+                                font-weight: bold;
+                                border: 1px solid #888;
+                                padding: 2px 8px;
+                                border-radius: 3px;
+                                white-space: nowrap;
+                            }
+
+                            /* ---- BLOQUE MEDIDAS + DIAGRAMA ---- */
+                            .asm-meas-block {
+                                display: flex;
+                                gap: 8px;
+                                margin-bottom: 4px;
+                                align-items: flex-start;
+                            }
+                            .asm-meas-table-wrap { flex: 0 0 48%; }
+                            .asm-diagram-box {
+                                flex: 0 0 30%;
+                                border: 1px solid #555;
+                                min-height: 72px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                overflow: hidden;
+                            }
+                            .asm-diagram-box img {
+                                max-width: 100%;
+                                max-height: 90px;
+                                object-fit: contain;
+                            }
+
+                            /* ---- TABLA DE MEDIDAS (izquierda del bloque) ---- */
+                            .asm-meas-tbl {
+                                width: 100%;
+                                border-collapse: collapse;
+                                font-size: 8.5pt;
+                            }
+                            .asm-meas-tbl th {
+                                background-color: #e8e8e8;
+                                border: 0.5px solid #999;
+                                padding: 2px 5px;
+                                font-weight: bold;
+                            }
+                            .asm-meas-tbl td {
+                                border: 0.5px solid #bbb;
+                                padding: 2px 5px;
+                            }
+                            .asm-meas-tbl td.val { text-align: right; font-weight: bold; }
+
+                            /* ---- TABLA PRINCIPAL DE MATERIALES ---- */
+                            .asm-main-tbl {
+                                width: 100%;
+                                border-collapse: collapse;
+                                font-size: 8pt;
+                                margin-top: 3px;
+                            }
+                            .asm-main-tbl th {
+                                background-color: #e0e0e0;
+                                border: 0.5px solid #999;
+                                padding: 2px 3px;
+                                font-weight: bold;
+                                white-space: nowrap;
+                            }
+                            .asm-main-tbl td {
+                                border: 0.5px solid #ccc;
+                                padding: 2px 3px;
+                                vertical-align: top;
+                            }
+                            .asm-main-tbl td.num { text-align: right; }
+                            .asm-main-tbl td.ctr { text-align: center; }
+                            .asm-main-tbl tr:nth-child(even) td { background-color: #fafafa; }
+
+                            /* ---- NOTAS Y OBSERVACIONES ---- */
+                            .asm-obs-box {
+                                border: 1px solid #bbb;
+                                border-radius: 3px;
+                                padding: 3px 6px;
+                                margin: 4px 0;
+                                font-size: 8pt;
+                                font-style: italic;
+                                background-color: #fffbe6;
+                            }
+
+                            /* ---- PIE: recuadros SP/P1 ---- */
+                            .asm-footer-boxes {
+                                display: flex;
+                                gap: 10px;
+                                margin-top: 6px;
+                            }
+                            .asm-sp-box {
+                                border: 1px solid #666;
+                                border-radius: 4px;
+                                overflow: hidden;
+                                min-width: 140px;
+                            }
+                            .asm-sp-box .asm-sp-title {
+                                background-color: #e0e0e0;
+                                padding: 2px 6px;
+                                font-weight: bold;
+                                font-size: 8pt;
+                                border-bottom: 1px solid #999;
+                            }
+                            .asm-sp-tbl {
+                                width: 100%;
+                                border-collapse: collapse;
+                                font-size: 8pt;
+                            }
+                            .asm-sp-tbl th {
+                                border: 0.5px solid #bbb;
+                                padding: 2px 5px;
+                                background-color: #f5f5f5;
+                                font-weight: bold;
+                            }
+                            .asm-sp-tbl td {
+                                border: 0.5px solid #ddd;
+                                padding: 3px 5px;
+                            }
+
+                            /* ---- TOTALES (pie derecho) ---- */
+                            .asm-totals-wrap {
+                                display: flex;
+                                justify-content: flex-end;
+                                margin-top: 6px;
+                            }
+                            .asm-totals-tbl {
+                                border-collapse: collapse;
+                                font-size: 9pt;
+                                min-width: 200px;
+                            }
+                            .asm-totals-tbl td {
+                                padding: 2px 8px;
+                                border: 0.5px solid #ccc;
+                            }
+                            .asm-totals-tbl td.lbl { background-color: #f0f0f0; }
+                            .asm-totals-tbl td.amt { text-align: right; font-weight: bold; }
+                            .asm-totals-tbl tr.saldo td {
+                                font-size: 10pt;
+                                font-weight: bold;
+                                background-color: #e8e8e8;
+                                border-top: 1.5px solid #555;
+                            }
+                        </style>
+
+                        <!-- ================================================
+                             ENCABEZADO DEL DOCUMENTO (una sola vez por orden)
+                        ================================================ -->
+                        <t t-set="pinfo" t-value="order.get_print_info()"/>
+
+                        <div class="asm-docheader">
+                            <!-- Izquierda: logo + referencia de orden -->
+                            <div class="asm-dh-left">
+                                <t t-if="order.company_id.logo">
+                                    <img t-att-src="image_data_uri(order.company_id.logo)"/>
+                                </t>
+                                <t t-else="">
+                                    <div class="asm-bold" style="font-size:11pt;">
+                                        <t t-esc="order.company_id.name"/>
+                                    </div>
+                                </t>
+                                <div class="asm-order-ref">
+                                    <t t-esc="order.name"/> -
+                                    <t t-esc="order.get_display_name() or '(sin cliente)'"/>
+                                </div>
+                            </div>
+
+                            <!-- Centro: titulo -->
+                            <div class="asm-dh-center">
+                                <h2><i>Hoja de ensamble</i></h2>
+                                <div class="asm-subtitle">Orden de Produccion:</div>
+                                <div class="asm-bold">
+                                    <t t-esc="order.name"/>
+                                    <t t-if="order.get_display_name()">
+                                        - <t t-esc="order.get_display_name()"/>
+                                    </t>
+                                </div>
+                            </div>
+
+                            <!-- Derecha: recuadro info -->
+                            <div class="asm-dh-right">
+                                <div class="asm-info-box">
+                                    <div><b>Usuario:</b> <t t-esc="pinfo['user']"/></div>
+                                    <div><b>Fecha:</b> <t t-esc="pinfo['date']"/></div>
+                                    <div><b>Pagina:</b> 1 / 1</div>
+                                    <div><b>Estado:</b> <t t-esc="order.get_state_label()"/></div>
+                                    <div><b>Reporte:</b> rpt_orden_interna</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="asm-hr"/>
+
+                        <!-- ================================================
+                             SECCION POR LINEA DE PRODUCTO
+                        ================================================ -->
+                        <t t-foreach="order.line_ids" t-as="line">
+                        <div class="asm-article-block">
+
+                            <!-- Fila de articulo -->
+                            <div class="asm-article-row">
+                                <div>
+                                    <span class="asm-bold">Articulo a Producir</span>
+                                    <t t-esc="line.product_id.name"/>
+                                    <br/>
+                                    <span class="asm-bold">Cantidad</span>
+                                    <t t-esc="line.quantity"/>
+                                </div>
+                                <div class="asm-correlativo">Correlativo C <t t-esc="line_index + 1"/></div>
+                            </div>
+
+                            <!-- Bloque medidas + diagrama -->
+                            <div class="asm-meas-block">
+                                <div class="asm-meas-table-wrap">
+                                    <table class="asm-meas-tbl">
+                                        <thead>
+                                            <tr>
+                                                <th>Medidas</th>
+                                                <th class="val">Valor</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Alto del articulo</td>
+                                                <td class="val">
+                                                    <t t-esc="'%.3f' % (line.height / 100.0)"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Ancho del articulo</td>
+                                                <td class="val">
+                                                    <t t-esc="'%.3f' % (line.width / 100.0)"/>
+                                                </td>
+                                            </tr>
+                                            <t t-if="line.depth">
+                                                <tr>
+                                                    <td>Profundidad</td>
+                                                    <td class="val">
+                                                        <t t-esc="'%.3f' % (line.depth / 100.0)"/>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                            <t t-foreach="line.characteristic_value_ids" t-as="cv">
+                                                <t t-if="cv.get_display_value()">
+                                                    <tr>
+                                                        <td><t t-esc="cv.char_name"/></td>
+                                                        <td class="val"><t t-esc="cv.get_display_value()"/></td>
+                                                    </tr>
+                                                </t>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Diagrama / imagen del producto -->
+                                <div class="asm-diagram-box">
+                                    <span style="font-size:7pt;color:#aaa;">[diagrama]</span>
+                                </div>
+                            </div>
+
+                            <!-- Tabla principal de materiales -->
+                            <t t-set="asm" t-value="line.get_assembly_list()"/>
+                            <t t-if="asm">
+                                <table class="asm-main-tbl">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:10%">Material</th>
+                                            <th style="width:34%">Descripcion</th>
+                                            <th class="ctr" style="width:5%">c/u</th>
+                                            <th class="ctr" style="width:5%">Total</th>
+                                            <th class="num" style="width:8%">Ancho</th>
+                                            <th class="num" style="width:8%">Alto</th>
+                                            <th class="num" style="width:8%">Largo</th>
+                                            <th class="ctr" style="width:5%">\</th>
+                                            <th class="ctr" style="width:5%">/</th>
+                                            <th style="width:12%">Desc. Corte</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="asm" t-as="item">
+                                            <tr>
+                                                <td><t t-esc="item['code']"/></td>
+                                                <td><t t-esc="item['name']"/></td>
+                                                <!-- c/u y Total: para herrajerías agrega "uds" -->
+                                                <td class="ctr">
+                                                    <t t-esc="item['qty_each']"/>
+                                                    <t t-if="item['unit'] == 'uds'">
+                                                        <span style="font-size:7pt;"> uds</span>
+                                                    </t>
+                                                </td>
+                                                <td class="ctr">
+                                                    <t t-esc="item['qty_total']"/>
+                                                    <t t-if="item['unit'] == 'uds'">
+                                                        <span style="font-size:7pt;"> uds</span>
+                                                    </t>
+                                                </td>
+                                                <!-- Ancho: solo vidrio -->
+                                                <td class="num">
+                                                    <t t-esc="item['width_str']"/>
+                                                </td>
+                                                <!-- Alto: solo vidrio -->
+                                                <td class="num">
+                                                    <t t-esc="item['height_str']"/>
+                                                </td>
+                                                <!-- Largo: perfil o lineal -->
+                                                <td class="num">
+                                                    <t t-esc="item['length_str']"/>
+                                                </td>
+                                                <td></td>
+                                                <td></td>
+                                                <td style="font-size:7.5pt;color:#666;">
+                                                    <t t-esc="item['notes']"/>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </t>
+
+                            <!-- Notas de linea -->
+                            <t t-if="line.notes">
+                                <div class="asm-obs-box">
+                                    Obs: <t t-esc="line.notes"/>
+                                </div>
+                            </t>
+
+                        </div><!-- fin asm-article-block -->
+                        </t> <!-- fin t-foreach order.line_ids -->
+
+                        <!-- Extras -->
+                        <t t-if="order.extra_ids">
+                            <div class="asm-bold" style="margin-top:4px;">Extras:</div>
+                            <table class="asm-main-tbl" style="width:50%;">
+                                <thead>
+                                    <tr>
+                                        <th>Concepto</th>
+                                        <th class="num">Precio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="order.extra_ids" t-as="extra">
+                                        <tr>
+                                            <td><t t-esc="extra.name"/></td>
+                                            <td class="num">
+                                                <t t-esc="extra.price"
+                                                   t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <!-- Observaciones generales -->
+                        <t t-if="order.notes">
+                            <div class="asm-obs-box" style="margin-top:4px;">
+                                <b>Observaciones generales:</b> <t t-esc="order.notes"/>
+                            </div>
+                        </t>
+
+                        <!-- ================================================
+                             PIE: Recuadros SP/P1 (visibles si show_sp_detail)
+                        ================================================ -->
+                        <t t-if="order.show_sp_detail">
+                            <div class="asm-footer-boxes">
+                                <div class="asm-sp-box">
+                                    <div class="asm-sp-title">Detalle de SP's</div>
+                                    <table class="asm-sp-tbl">
+                                        <tr><th>Bodega</th><th>SP</th></tr>
+                                        <tr><td>&#160;</td><td>&#160;</td></tr>
+                                        <tr><td>&#160;</td><td>&#160;</td></tr>
+                                    </table>
+                                </div>
+                                <div class="asm-sp-box">
+                                    <div class="asm-sp-title">Detalle de P1's pvc</div>
+                                    <table class="asm-sp-tbl">
+                                        <tr><th>Bodega</th><th>N&#176; P1</th></tr>
+                                        <tr><td>&#160;</td><td>&#160;</td></tr>
+                                        <tr><td>&#160;</td><td>&#160;</td></tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </t>
+
+                        <!-- ================================================
+                             TOTALES (alineados a la derecha)
+                        ================================================ -->
+                        <div class="asm-totals-wrap">
+                            <table class="asm-totals-tbl">
+                                <tr>
+                                    <td class="lbl">Total</td>
+                                    <td class="amt">
+                                        <t t-esc="order.amount_total"
+                                           t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="lbl">Anticipo</td>
+                                    <td class="amt">
+                                        <t t-esc="order.amount_paid"
+                                           t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                    </td>
+                                </tr>
+                                <tr class="saldo">
+                                    <td class="lbl">Saldo</td>
+                                    <td class="amt">
+                                        <t t-esc="order.amount_due"
+                                           t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                    </div><!-- fin .page -->
+                </t><!-- fin web.external_layout -->
+            </t><!-- fin t-foreach docs -->
+        </t><!-- fin web.html_container -->
+    </template>
+
+</odoo>

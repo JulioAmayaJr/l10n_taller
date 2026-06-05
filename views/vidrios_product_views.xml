@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ==================== PRODUCTO ==================== -->
+
+    <record id="view_vidrios_product_list" model="ir.ui.view">
+        <field name="name">vidrios.product.list</field>
+        <field name="model">vidrios.product</field>
+        <field name="arch" type="xml">
+            <list string="Tipos de Producto">
+                <field name="name"/>
+                <field name="price_m2" string="Precio/m²"/>
+                <field name="min_price" string="Precio mín."/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vidrios_product_form" model="ir.ui.view">
+        <field name="name">vidrios.product.form</field>
+        <field name="model">vidrios.product</field>
+        <field name="arch" type="xml">
+            <form string="Tipo de Producto">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Nombre del producto..."/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="price_m2" string="Precio por m²"/>
+                            <field name="min_price" string="Precio mínimo"/>
+                        </group>
+                        <group>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Características" name="characteristics">
+                            <field name="characteristic_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="field_type"/>
+                                    <field name="selection_values"
+                                           invisible="field_type != 'select'"
+                                           required="field_type == 'select'"/>
+                                    <field name="visible_on_ticket"/>
+                                    <field name="ticket_label"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Fórmulas de despiece" name="formulas">
+                            <field name="formula_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="material_code" string="Código" optional="show"/>
+                                    <field name="name"/>
+                                    <field name="material_type"/>
+                                    <field name="quantity"/>
+
+                                    <!-- Campos para Perfil -->
+                                    <field name="base_dimension"
+                                           invisible="material_type != 'profile'"/>
+                                    <field name="divisor"
+                                           invisible="material_type != 'profile'"/>
+                                    <field name="addition"
+                                           invisible="material_type != 'profile'"/>
+                                    <field name="deduction"
+                                           invisible="material_type != 'profile'"/>
+
+                                    <!-- Campos para Vidrio -->
+                                    <field name="glass_width_deduction"
+                                           invisible="material_type != 'glass'"/>
+                                    <field name="glass_height_deduction"
+                                           invisible="material_type != 'glass'"/>
+
+                                    <!-- Campos para Lineal -->
+                                    <field name="width_coef"
+                                           invisible="material_type != 'linear'"/>
+                                    <field name="height_coef"
+                                           invisible="material_type != 'linear'"/>
+                                    <field name="linear_constant"
+                                           invisible="material_type != 'linear'"/>
+
+                                    <field name="notes" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_vidrios_product" model="ir.actions.act_window">
+        <field name="name">Productos</field>
+        <field name="res_model">vidrios.product</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_active': 1}</field>
+    </record>
+
+</odoo>

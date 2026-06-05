@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_report_ticket_cliente" model="ir.actions.report">
+        <field name="name">Ticket Cliente</field>
+        <field name="model">vidrios.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vidrios_castillo_taller.report_ticket_cliente</field>
+        <field name="report_file">vidrios_castillo_taller.report_ticket_cliente</field>
+        <field name="print_report_name">'Ticket - ' + (object.name or '')</field>
+        <field name="paperformat_id" ref="base.paperformat_euro"/>
+        <field name="binding_model_id" ref="model_vidrios_order"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- ================================================================
+         COMPROBANTE DE PEDIDO — A4, estilo uniforme con hoja de ensamble.
+         SIN medidas, SIN despiece, SIN datos tecnicos.
+    ================================================================ -->
+    <template id="report_ticket_cliente">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="order">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <style>
+                            .page { font-size: 9pt !important; line-height: 1.3; padding: 0 !important; }
+
+                            /* ---- Encabezado 3 zonas (identico a hoja de ensamble) ---- */
+                            .tk-docheader {
+                                display: flex;
+                                align-items: flex-start;
+                                gap: 6px;
+                                margin-bottom: 4px;
+                            }
+                            .tk-dh-left   { flex: 0 0 34%; }
+                            .tk-dh-center { flex: 1; text-align: center; }
+                            .tk-dh-right  { flex: 0 0 22%; }
+                            .tk-dh-left img {
+                                max-height: 48px;
+                                max-width: 130px;
+                                object-fit: contain;
+                                display: block;
+                            }
+                            .tk-order-ref {
+                                font-size: 8pt;
+                                margin-top: 3px;
+                                font-weight: bold;
+                            }
+                            .tk-dh-center h2 {
+                                font-size: 16pt;
+                                font-style: italic;
+                                font-weight: bold;
+                                margin: 0; padding: 0;
+                            }
+                            .tk-dh-center .tk-subtitle {
+                                font-size: 9pt;
+                                margin-top: 2px;
+                            }
+                            .tk-info-box {
+                                border: 1px solid #555;
+                                border-radius: 5px;
+                                padding: 4px 6px;
+                                font-size: 7.5pt;
+                                line-height: 1.6;
+                            }
+                            .tk-info-box b { display: inline-block; min-width: 58px; }
+                            .tk-hr  { border: none; border-top: 2px solid #333; margin: 5px 0; }
+                            .tk-hr2 { border: none; border-top: 1px solid #aaa; margin: 4px 0; }
+
+                            /* ---- Caja de datos del cliente ---- */
+                            .tk-client-box {
+                                border: 1px solid #ccc;
+                                border-radius: 3px;
+                                padding: 4px 8px;
+                                margin: 4px 0 6px;
+                                font-size: 9pt;
+                                background-color: #f8f8f8;
+                            }
+                            .tk-client-box b { display: inline-block; min-width: 52px; }
+
+                            /* ---- Tabla de productos ---- */
+                            .tk-prod-tbl {
+                                width: 100%;
+                                border-collapse: collapse;
+                                font-size: 9pt;
+                                margin-top: 4px;
+                            }
+                            .tk-prod-tbl th {
+                                background-color: #e0e0e0;
+                                border: 0.5px solid #999;
+                                padding: 3px 5px;
+                                font-weight: bold;
+                            }
+                            .tk-prod-tbl td {
+                                border: 0.5px solid #ccc;
+                                padding: 3px 5px;
+                                vertical-align: top;
+                            }
+                            .tk-prod-tbl td.num { text-align: right; }
+                            .tk-prod-tbl td.ctr { text-align: center; }
+                            .tk-prod-tbl tr:nth-child(even) td { background-color: #fafafa; }
+                            .tk-char { font-size: 7.5pt; color: #444; font-style: italic; }
+
+                            /* ---- Extras ---- */
+                            .tk-extras-lbl {
+                                font-size: 8pt;
+                                font-weight: bold;
+                                margin-top: 6px;
+                                color: #555;
+                            }
+
+                            /* ---- Caja de totales (derecha) ---- */
+                            .tk-totals-wrap {
+                                display: flex;
+                                justify-content: flex-end;
+                                margin-top: 8px;
+                            }
+                            .tk-totals-tbl {
+                                border-collapse: collapse;
+                                font-size: 9pt;
+                                min-width: 220px;
+                            }
+                            .tk-totals-tbl td {
+                                padding: 2px 8px;
+                                border: 0.5px solid #ccc;
+                            }
+                            .tk-totals-tbl td.lbl { background-color: #f0f0f0; }
+                            .tk-totals-tbl td.amt { text-align: right; }
+                            .tk-totals-tbl tr.total-main td {
+                                background-color: #e8e8e8;
+                                font-weight: bold;
+                                border-top: 1.5px solid #555;
+                            }
+                            .tk-totals-tbl tr.saldo td {
+                                font-size: 10pt;
+                                font-weight: bold;
+                                background-color: #e0e0e0;
+                                border-top: 1.5px solid #333;
+                            }
+
+                            /* ---- Pie ---- */
+                            .tk-footer {
+                                margin-top: 10px;
+                                padding-top: 4px;
+                                border-top: 1px solid #bbb;
+                                font-size: 8pt;
+                                color: #555;
+                                font-style: italic;
+                                text-align: center;
+                            }
+                        </style>
+
+                        <!-- ========== ENCABEZADO ========== -->
+                        <div class="tk-docheader">
+                            <!-- Izquierda: logo + referencia -->
+                            <div class="tk-dh-left">
+                                <t t-if="order.company_id.logo">
+                                    <img t-att-src="image_data_uri(order.company_id.logo)"/>
+                                </t>
+                                <t t-else="">
+                                    <div style="font-size:11pt;font-weight:bold;">
+                                        <t t-esc="order.company_id.name"/>
+                                    </div>
+                                </t>
+                                <div class="tk-order-ref">
+                                    <t t-esc="order.name"/>
+                                    <t t-if="order.get_display_name()">
+                                        - <t t-esc="order.get_display_name()"/>
+                                    </t>
+                                </div>
+                            </div>
+
+                            <!-- Centro: titulo -->
+                            <div class="tk-dh-center">
+                                <h2><i>Comprobante de Pedido</i></h2>
+                                <div class="tk-subtitle">
+                                    <t t-esc="order.company_id.name"/>
+                                </div>
+                            </div>
+
+                            <!-- Derecha: recuadro info -->
+                            <div class="tk-dh-right">
+                                <div class="tk-info-box">
+                                    <div><b>N&#176;:</b> <t t-esc="order.name"/></div>
+                                    <div>
+                                        <b>Fecha:</b>
+                                        <span t-esc="order.create_date" t-options='{"widget":"date"}'/>
+                                    </div>
+                                    <t t-if="order.delivery_date">
+                                        <div>
+                                            <b>Entrega:</b>
+                                            <span t-esc="order.delivery_date" t-options='{"widget":"date"}'/>
+                                        </div>
+                                    </t>
+                                    <div><b>Estado:</b> <t t-esc="order.get_state_label()"/></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="tk-hr"/>
+
+                        <!-- ========== DATOS DEL CLIENTE ========== -->
+                        <div class="tk-client-box">
+                            <b>Cliente:</b>
+                            <t t-esc="order.get_display_name() or '(sin nombre)'"/>
+                            <t t-if="order.get_display_phone()">
+                                &#160;&#160;
+                                <b>Tel:</b>
+                                <t t-esc="order.get_display_phone()"/>
+                            </t>
+                        </div>
+
+                        <!-- ========== TABLA DE PRODUCTOS ========== -->
+                        <table class="tk-prod-tbl">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="ctr" style="width:7%">Cant.</th>
+                                    <th class="num" style="width:14%">Precio unit.</th>
+                                    <th class="num" style="width:14%">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="order.line_ids" t-as="line">
+                                    <tr>
+                                        <td>
+                                            <strong><t t-esc="line.product_id.name"/></strong>
+                                            <!-- Caracteristicas visibles en ticket -->
+                                            <t t-foreach="line.characteristic_value_ids" t-as="cv">
+                                                <t t-if="cv.visible_on_ticket and cv.get_display_value()">
+                                                    <br/>
+                                                    <span class="tk-char">
+                                                        <t t-esc="cv.get_ticket_label()"/>:
+                                                        <t t-esc="cv.get_display_value()"/>
+                                                    </span>
+                                                </t>
+                                            </t>
+                                            <t t-if="line.notes">
+                                                <br/>
+                                                <span class="tk-char"><t t-esc="line.notes"/></span>
+                                            </t>
+                                        </td>
+                                        <td class="ctr"><t t-esc="line.quantity"/></td>
+                                        <td class="num">
+                                            <t t-esc="line.price_unit"
+                                               t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                        </td>
+                                        <td class="num">
+                                            <t t-esc="line.price_subtotal"
+                                               t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                        </td>
+                                    </tr>
+                                </t>
+
+                                <!-- Extras -->
+                                <t t-if="order.extra_ids">
+                                    <tr>
+                                        <td colspan="4" style="background:#f0f0f0;font-weight:bold;font-size:8pt;padding:2px 5px;">
+                                            Extras
+                                        </td>
+                                    </tr>
+                                    <t t-foreach="order.extra_ids" t-as="extra">
+                                        <tr>
+                                            <td><t t-esc="extra.name"/></td>
+                                            <td class="ctr">1</td>
+                                            <td class="num">
+                                                <t t-esc="extra.price"
+                                                   t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                            </td>
+                                            <td class="num">
+                                                <t t-esc="extra.price"
+                                                   t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </t>
+                            </tbody>
+                        </table>
+
+                        <!-- ========== TOTALES ========== -->
+                        <div class="tk-totals-wrap">
+                            <table class="tk-totals-tbl">
+                                <tr>
+                                    <td class="lbl">Subtotal</td>
+                                    <td class="amt">
+                                        <t t-esc="order.amount_untaxed"
+                                           t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                    </td>
+                                </tr>
+                                <t t-if="order.apply_tax">
+                                    <tr>
+                                        <td class="lbl">
+                                            IVA (<t t-esc="order.tax_rate"/>%)
+                                        </td>
+                                        <td class="amt">
+                                            <t t-esc="order.amount_tax"
+                                               t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                        </td>
+                                    </tr>
+                                </t>
+                                <tr class="total-main">
+                                    <td class="lbl">TOTAL</td>
+                                    <td class="amt">
+                                        <t t-esc="order.amount_total"
+                                           t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="lbl">Anticipo pagado</td>
+                                    <td class="amt">
+                                        <t t-esc="order.amount_paid"
+                                           t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                    </td>
+                                </tr>
+                                <tr class="saldo">
+                                    <td class="lbl">Saldo pendiente</td>
+                                    <td class="amt">
+                                        <t t-esc="order.amount_due"
+                                           t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- ========== PIE ========== -->
+                        <div class="tk-footer">
+                            Este comprobante no incluye medidas ni detalles tecnicos.
+                        </div>
+
+                    </div><!-- fin .page -->
+                </t><!-- fin web.external_layout -->
+            </t><!-- fin t-foreach docs -->
+        </t><!-- fin web.html_container -->
+    </template>
+
+</odoo>
