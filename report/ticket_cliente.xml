@@ -225,7 +225,17 @@
                                     <tr>
                                         <td>
                                             <strong><t t-esc="line.product_id.name"/></strong>
-                                            <!-- Caracteristicas visibles en ticket -->
+                                            <!-- Medida general -->
+                                            <t t-if="line.width or line.height">
+                                                <br/>
+                                                <span class="tk-char">
+                                                    <t t-esc="line.width"/> x <t t-esc="line.height"/> cm
+                                                    <t t-if="line.depth and line.product_requires_depth">
+                                                        x <t t-esc="line.depth"/> cm
+                                                    </t>
+                                                </span>
+                                            </t>
+                                            <!-- Características visibles en ticket -->
                                             <t t-foreach="line.characteristic_value_ids" t-as="cv">
                                                 <t t-if="cv.visible_on_ticket and cv.get_display_value()">
                                                     <br/>
@@ -237,7 +247,7 @@
                                             </t>
                                             <t t-if="line.notes">
                                                 <br/>
-                                                <span class="tk-char"><t t-esc="line.notes"/></span>
+                                                <span class="tk-char it"><t t-esc="line.notes"/></span>
                                             </t>
                                         </td>
                                         <td class="ctr"><t t-esc="line.quantity"/></td>
@@ -324,7 +334,7 @@
 
                         <!-- ========== PIE ========== -->
                         <div class="tk-footer">
-                            Este comprobante no incluye medidas ni detalles tecnicos.
+                            Este comprobante no incluye el detalle técnico de corte.
                         </div>
 
                     </div><!-- fin .page -->

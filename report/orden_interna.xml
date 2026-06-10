@@ -365,9 +365,7 @@
                                             <th style="width:34%">Descripcion</th>
                                             <th class="ctr" style="width:5%">c/u</th>
                                             <th class="ctr" style="width:5%">Total</th>
-                                            <th class="num" style="width:8%">Ancho</th>
-                                            <th class="num" style="width:8%">Alto</th>
-                                            <th class="num" style="width:8%">Largo</th>
+                                            <th class="num" style="width:16%">Panel / Longitud</th>
                                             <th class="ctr" style="width:5%">\</th>
                                             <th class="ctr" style="width:5%">/</th>
                                             <th style="width:12%">Desc. Corte</th>
@@ -378,30 +376,27 @@
                                             <tr>
                                                 <td><t t-esc="item['code']"/></td>
                                                 <td><t t-esc="item['name']"/></td>
-                                                <!-- c/u y Total: para herrajerías agrega "uds" -->
+                                                <!-- c/u y Total: decimales con %g (0.2 no 0.200, 1 no 1.0) -->
                                                 <td class="ctr">
-                                                    <t t-esc="item['qty_each']"/>
+                                                    <t t-esc="'%g' % item['qty_each']"/>
                                                     <t t-if="item['unit'] == 'uds'">
                                                         <span style="font-size:7pt;"> uds</span>
                                                     </t>
                                                 </td>
                                                 <td class="ctr">
-                                                    <t t-esc="item['qty_total']"/>
+                                                    <t t-esc="'%g' % item['qty_total']"/>
                                                     <t t-if="item['unit'] == 'uds'">
                                                         <span style="font-size:7pt;"> uds</span>
                                                     </t>
                                                 </td>
-                                                <!-- Ancho: solo vidrio -->
+                                                <!-- Panel (vidrio) o Longitud (perfil/lineal) -->
                                                 <td class="num">
-                                                    <t t-esc="item['width_str']"/>
-                                                </td>
-                                                <!-- Alto: solo vidrio -->
-                                                <td class="num">
-                                                    <t t-esc="item['height_str']"/>
-                                                </td>
-                                                <!-- Largo: perfil o lineal -->
-                                                <td class="num">
-                                                    <t t-esc="item['length_str']"/>
+                                                    <t t-if="item['material_type'] == 'glass'">
+                                                        <t t-esc="item.get('panel_str', '')"/>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <t t-esc="item['length_str']"/>
+                                                    </t>
                                                 </td>
                                                 <td></td>
                                                 <td></td>

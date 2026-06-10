@@ -56,10 +56,14 @@
         <field name="visible_on_ticket">False</field>
     </record>
 
-    <!-- Fórmulas de despiece: Ventana corrediza 2 hojas -->
+    <!--
+        Fórmulas de despiece: Ventana corrediza 2 hojas.
+        El campo "name" se omite intencionalmente — se calcula
+        automáticamente desde material_product_id.display_name una vez
+        que el post_init_hook enlaza los productos de inventario.
+    -->
     <record id="formula_ventana_riel_sup" model="vidrios.formula">
         <field name="product_id" ref="product_ventana"/>
-        <field name="name">Riel superior</field>
         <field name="sequence">10</field>
         <field name="material_type">profile</field>
         <field name="base_dimension">width</field>
@@ -71,7 +75,6 @@
 
     <record id="formula_ventana_riel_inf" model="vidrios.formula">
         <field name="product_id" ref="product_ventana"/>
-        <field name="name">Riel inferior</field>
         <field name="sequence">20</field>
         <field name="material_type">profile</field>
         <field name="base_dimension">width</field>
@@ -83,7 +86,6 @@
 
     <record id="formula_ventana_jamba_izq" model="vidrios.formula">
         <field name="product_id" ref="product_ventana"/>
-        <field name="name">Jamba izquierda</field>
         <field name="sequence">30</field>
         <field name="material_type">profile</field>
         <field name="base_dimension">height</field>
@@ -95,7 +97,6 @@
 
     <record id="formula_ventana_jamba_der" model="vidrios.formula">
         <field name="product_id" ref="product_ventana"/>
-        <field name="name">Jamba derecha</field>
         <field name="sequence">40</field>
         <field name="material_type">profile</field>
         <field name="base_dimension">height</field>
@@ -107,7 +108,6 @@
 
     <record id="formula_ventana_hoja_h" model="vidrios.formula">
         <field name="product_id" ref="product_ventana"/>
-        <field name="name">Horizontal de hoja</field>
         <field name="sequence">50</field>
         <field name="material_type">profile</field>
         <field name="base_dimension">width</field>
@@ -120,7 +120,6 @@
 
     <record id="formula_ventana_hoja_v" model="vidrios.formula">
         <field name="product_id" ref="product_ventana"/>
-        <field name="name">Vertical de hoja</field>
         <field name="sequence">60</field>
         <field name="material_type">profile</field>
         <field name="base_dimension">height</field>
@@ -133,13 +132,10 @@
 
     <record id="formula_ventana_vidrio" model="vidrios.formula">
         <field name="product_id" ref="product_ventana"/>
-        <field name="name">Vidrio por hoja</field>
         <field name="sequence">70</field>
         <field name="material_type">glass</field>
-        <field name="base_dimension">width</field>
-        <field name="divisor">2</field>
-        <field name="addition">0</field>
-        <field name="deduction">2</field>
+        <field name="glass_width_deduction">2</field>
+        <field name="glass_height_deduction">4</field>
         <field name="quantity">2</field>
         <field name="notes">Medida de alto: altura - 4 cm</field>
     </record>
@@ -179,44 +175,12 @@
         <field name="visible_on_ticket">False</field>
     </record>
 
-    <record id="formula_vitrina_marco_h" model="vidrios.formula">
-        <field name="product_id" ref="product_vitrina"/>
-        <field name="name">Marco horizontal</field>
-        <field name="sequence">10</field>
-        <field name="material_type">profile</field>
-        <field name="base_dimension">width</field>
-        <field name="divisor">1</field>
-        <field name="deduction">0</field>
-        <field name="quantity">2</field>
-    </record>
-
-    <record id="formula_vitrina_marco_v" model="vidrios.formula">
-        <field name="product_id" ref="product_vitrina"/>
-        <field name="name">Marco vertical</field>
-        <field name="sequence">20</field>
-        <field name="material_type">profile</field>
-        <field name="base_dimension">height</field>
-        <field name="divisor">1</field>
-        <field name="deduction">0</field>
-        <field name="quantity">2</field>
-    </record>
-
-    <record id="formula_vitrina_vidrio" model="vidrios.formula">
-        <field name="product_id" ref="product_vitrina"/>
-        <field name="name">Vidrio frontal</field>
-        <field name="sequence">30</field>
-        <field name="material_type">glass</field>
-        <field name="base_dimension">width</field>
-        <field name="divisor">1</field>
-        <field name="deduction">1</field>
-        <field name="quantity">1</field>
-    </record>
-
     <!-- ========== PRODUCTO: PECERA ========== -->
     <record id="product_pecera" model="vidrios.product">
         <field name="name">Pecera / Acuario</field>
         <field name="price_m2">95.00</field>
         <field name="min_price">40.00</field>
+        <field name="requires_depth">True</field>
     </record>
 
     <record id="char_pecera_espesor" model="vidrios.characteristic">
@@ -312,7 +276,6 @@
     <!-- Felpa: linear, largo = (2*ancho + 2*alto)/100 metros -->
     <record id="formula_vf_felpa" model="vidrios.formula">
         <field name="product_id" ref="product_ventana_francesa"/>
-        <field name="name">Felpa</field>
         <field name="sequence">10</field>
         <field name="material_type">linear</field>
         <field name="width_coef">2.0</field>
@@ -324,7 +287,6 @@
     <!-- Baquelita: linear, largo = (3*ancho + 6*alto)/100 metros -->
     <record id="formula_vf_baquelita" model="vidrios.formula">
         <field name="product_id" ref="product_ventana_francesa"/>
-        <field name="name">Baquelita</field>
         <field name="sequence">20</field>
         <field name="material_type">linear</field>
         <field name="width_coef">3.0</field>
@@ -336,7 +298,6 @@
     <!-- Rodo: herraje, 2 unidades fijas -->
     <record id="formula_vf_rodo" model="vidrios.formula">
         <field name="product_id" ref="product_ventana_francesa"/>
-        <field name="name">Rodo</field>
         <field name="sequence">30</field>
         <field name="material_type">hardware</field>
         <field name="base_dimension">fixed</field>
@@ -346,11 +307,81 @@
     <!-- Cerrador: herraje, 1 unidad fija -->
     <record id="formula_vf_cerrador" model="vidrios.formula">
         <field name="product_id" ref="product_ventana_francesa"/>
-        <field name="name">Cerrador</field>
         <field name="sequence">40</field>
         <field name="material_type">hardware</field>
         <field name="base_dimension">fixed</field>
         <field name="quantity">1</field>
+    </record>
+
+    <!--
+        ========== FÓRMULAS DE DESPIECE: PECERA / ACUARIO ==========
+
+        Medidas del artículo: Largo (depth) × Alto (height) × Ancho (width)
+
+        Ejemplo Pecera 100×40×30:
+          - Panel Largo×Alto  (frente/fondo)   : 100×40 cm  × 2 piezas
+          - Panel Largo×Ancho (techo/piso)     : 100×30 cm  × 2 piezas
+          - Panel Alto×(Ancho-1.2) (laterales) :  40×28.8 cm × 2 piezas
+          - Silicón                            : 20 cm = 0.20 m  × 1
+          - Vinil negro                        : 10 cm = 0.10 m  × 1
+    -->
+
+    <!-- Vidrio Largo×Alto: paneles frente y fondo -->
+    <record id="formula_pecera_vidrio_largo_alto" model="vidrios.formula">
+        <field name="product_id" ref="product_pecera"/>
+        <field name="sequence">10</field>
+        <field name="material_type">glass</field>
+        <field name="glass_dim_a">depth</field>
+        <field name="glass_dim_b">height</field>
+        <field name="glass_width_deduction">0</field>
+        <field name="glass_height_deduction">0</field>
+        <field name="quantity">2</field>
+        <field name="notes">Frente y fondo: Largo × Alto</field>
+    </record>
+
+    <!-- Vidrio Largo×Ancho: paneles techo y piso -->
+    <record id="formula_pecera_vidrio_largo_ancho" model="vidrios.formula">
+        <field name="product_id" ref="product_pecera"/>
+        <field name="sequence">20</field>
+        <field name="material_type">glass</field>
+        <field name="glass_dim_a">depth</field>
+        <field name="glass_dim_b">width</field>
+        <field name="glass_width_deduction">0</field>
+        <field name="glass_height_deduction">0</field>
+        <field name="quantity">2</field>
+        <field name="notes">Techo y piso: Largo × Ancho</field>
+    </record>
+
+    <!-- Vidrio Alto×(Ancho-1.2): paneles laterales con deducción en Ancho -->
+    <record id="formula_pecera_vidrio_lateral" model="vidrios.formula">
+        <field name="product_id" ref="product_pecera"/>
+        <field name="sequence">30</field>
+        <field name="material_type">glass</field>
+        <field name="glass_dim_a">height</field>
+        <field name="glass_dim_b">width</field>
+        <field name="glass_width_deduction">0</field>
+        <field name="glass_height_deduction">1.2</field>
+        <field name="quantity">2</field>
+        <field name="notes">Laterales: Alto × (Ancho - 1.2 cm)</field>
+    </record>
+
+    <!-- Silicón: herraje con cantidad decimal — 0.2 tubos por pieza -->
+    <record id="formula_pecera_silicon" model="vidrios.formula">
+        <field name="product_id" ref="product_pecera"/>
+        <field name="sequence">40</field>
+        <field name="material_type">hardware</field>
+        <field name="quantity">0.2</field>
+        <field name="notes">Silicón sellador (0.2 tubo/pieza)</field>
+    </record>
+
+    <!-- Vinil negro: material lineal, constante 10 cm = 0.10 m -->
+    <record id="formula_pecera_vinil" model="vidrios.formula">
+        <field name="product_id" ref="product_pecera"/>
+        <field name="sequence">50</field>
+        <field name="material_type">linear</field>
+        <field name="linear_constant">10.0</field>
+        <field name="quantity">1</field>
+        <field name="notes">Vinil negro borde (0.10 m)</field>
     </record>
 
 </odoo>

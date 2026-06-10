@@ -32,6 +32,7 @@
                         </group>
                         <group>
                             <field name="active"/>
+                            <field name="requires_depth"/>
                         </group>
                     </group>
                     <notebook>
@@ -49,41 +50,78 @@
                                 </list>
                             </field>
                         </page>
+
+                        <!-- ===== FÓRMULAS DE DESPIECE ===== -->
                         <page string="Fórmulas de despiece" name="formulas">
                             <field name="formula_ids">
-                                <list editable="bottom">
+
+                                <!-- Lista compacta: sin editable inline, clic abre popup -->
+                                <list string="Fórmulas">
                                     <field name="sequence" widget="handle"/>
-                                    <field name="material_code" string="Código" optional="show"/>
-                                    <field name="name"/>
-                                    <field name="material_type"/>
-                                    <field name="quantity"/>
-
-                                    <!-- Campos para Perfil -->
-                                    <field name="base_dimension"
-                                           invisible="material_type != 'profile'"/>
-                                    <field name="divisor"
-                                           invisible="material_type != 'profile'"/>
-                                    <field name="addition"
-                                           invisible="material_type != 'profile'"/>
-                                    <field name="deduction"
-                                           invisible="material_type != 'profile'"/>
-
-                                    <!-- Campos para Vidrio -->
-                                    <field name="glass_width_deduction"
-                                           invisible="material_type != 'glass'"/>
-                                    <field name="glass_height_deduction"
-                                           invisible="material_type != 'glass'"/>
-
-                                    <!-- Campos para Lineal -->
-                                    <field name="width_coef"
-                                           invisible="material_type != 'linear'"/>
-                                    <field name="height_coef"
-                                           invisible="material_type != 'linear'"/>
-                                    <field name="linear_constant"
-                                           invisible="material_type != 'linear'"/>
-
-                                    <field name="notes" optional="hide"/>
+                                    <field name="material_product_id"
+                                           string="Producto (pieza)"
+                                           required="1"
+                                           options="{'no_create': True}"/>
+                                    <field name="material_type" string="Tipo"/>
+                                    <field name="quantity" string="Cant."/>
+                                    <field name="formula_summary"
+                                           string="Fórmula"
+                                           readonly="1"/>
+                                    <field name="notes" string="Notas" optional="hide"/>
                                 </list>
+
+                                <!-- Popup que se abre al hacer clic en una fila -->
+                                <form string="Fórmula de Despiece">
+                                    <group>
+                                        <group string="Pieza">
+                                            <field name="material_product_id"
+                                                   required="1"
+                                                   options="{'no_create': True}"
+                                                   string="Producto de inventario"/>
+                                            <field name="material_type"/>
+                                            <field name="quantity"/>
+                                            <field name="notes"/>
+                                        </group>
+
+                                        <group string="Parámetros de corte">
+                                            <!-- Perfil -->
+                                            <field name="base_dimension"
+                                                   invisible="material_type != 'profile'"/>
+                                            <field name="divisor"
+                                                   invisible="material_type != 'profile'"/>
+                                            <field name="addition"
+                                                   invisible="material_type != 'profile'"/>
+                                            <field name="deduction"
+                                                   invisible="material_type != 'profile'"/>
+
+                                            <!-- Vidrio -->
+                                            <field name="glass_dim_a"
+                                                   string="Dimensión A (panel)"
+                                                   invisible="material_type != 'glass'"/>
+                                            <field name="glass_width_deduction"
+                                                   string="Deducción A (cm)"
+                                                   invisible="material_type != 'glass'"/>
+                                            <field name="glass_dim_b"
+                                                   string="Dimensión B (panel)"
+                                                   invisible="material_type != 'glass'"/>
+                                            <field name="glass_height_deduction"
+                                                   string="Deducción B (cm)"
+                                                   invisible="material_type != 'glass'"/>
+
+                                            <!-- Lineal -->
+                                            <field name="width_coef"
+                                                   invisible="material_type != 'linear'"/>
+                                            <field name="height_coef"
+                                                   invisible="material_type != 'linear'"/>
+                                            <field name="depth_coef"
+                                                   string="Coef. Largo"
+                                                   invisible="material_type != 'linear'"/>
+                                            <field name="linear_constant"
+                                                   invisible="material_type != 'linear'"/>
+                                        </group>
+                                    </group>
+                                </form>
+
                             </field>
                         </page>
                     </notebook>

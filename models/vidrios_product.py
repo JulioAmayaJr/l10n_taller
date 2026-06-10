@@ -10,6 +10,13 @@ class VidriosProduct(models.Model):
     active = fields.Boolean('Activo', default=True)
     price_m2 = fields.Float('Precio por m²', digits=(10, 2), default=0.0)
     min_price = fields.Float('Precio mínimo', digits=(10, 2), default=0.0)
+    requires_depth = fields.Boolean(
+        'Requiere Largo (3D)',
+        default=False,
+        help='Activa el campo Largo (cm) en las líneas de orden para productos 3D '
+             '(ej. vitrinas, peceras, acuarios). Las fórmulas pueden usar Largo como '
+             'dimensión base de paneles y perfiles.',
+    )
     characteristic_ids = fields.One2many(
         'vidrios.characteristic', 'product_id', string='Características'
     )

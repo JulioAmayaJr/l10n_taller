@@ -1,6 +1,8 @@
+import logging
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 
+_logger = logging.getLogger(__name__)
 
 ORDER_STATES = [
     ('draft', 'Borrador'),
@@ -82,6 +84,30 @@ class VidriosOrder(models.Model):
         string='Fotos / Adjuntos',
     )
 
+    # ------------------------------------------------------------------ #
+    # Integración Inventario                                               #
+    # ------------------------------------------------------------------ #
+
+    material_ids = fields.One2many(
+        'vidrios.order.material', 'order_id', string='Materiales estimados'
+    )
+    consume_stock = fields.Boolean(
+        'Consumir stock al producir', default=True,
+        help='Si está activo, al pasar a Producción se descontarán los '
+             'materiales calculados del inventario.',
+    )
+    stock_consumed = fields.Boolean(
+        'Stock consumido', default=False, copy=False, readonly=True,
+        help='Marca interna: evita descontar el stock dos veces.',
+    )
+    stock_move_ids = fields.One2many(
+        'stock.move', 'vidrios_order_id', string='Movimientos de stock'
+    )
+
+    # ------------------------------------------------------------------ #
+    # Secuencia                                                            #
+    # ------------------------------------------------------------------ #
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -89,7 +115,19 @@ class VidriosOrder(models.Model):
                 vals['name'] = (
                     self.env['ir.sequence'].next_by_code('vidrios.order') or 'Nuevo'
                 )
-        return super().create(vals_list)
+        orders = super().create(vals_list)
+        orders._recompute_materials()
+        return orders
+
+    def write(self, vals):
+        res = super().write(vals)
+        if 'line_ids' in vals:
+            self._recompute_materials()
+        return res
+
+    # ------------------------------------------------------------------ #
+    # Montos                                                               #
+    # ------------------------------------------------------------------ #
 
     @api.depends(
         'line_ids.price_subtotal',
@@ -116,7 +154,9 @@ class VidriosOrder(models.Model):
             order.amount_paid = paid
             order.amount_due = total - paid
 
-    # --- Flujo de estados ---
+    # ------------------------------------------------------------------ #
+    # Flujo de estados                                                     #
+    # ------------------------------------------------------------------ #
 
     def action_quote(self):
         for rec in self:
@@ -128,6 +168,10 @@ class VidriosOrder(models.Model):
         for rec in self:
             if rec.state not in ('quoted', 'deposit'):
                 raise UserError(_('Debe estar cotizado o con anticipo para pasar a producción.'))
+            # Actualizar materiales y consumir stock
+            rec._recompute_materials()
+            if rec.consume_stock and not rec.stock_consumed:
+                rec._generate_stock_moves()
         self.write({'state': 'production'})
 
     def action_ready(self):
@@ -143,6 +187,9 @@ class VidriosOrder(models.Model):
         self.write({'state': 'delivered'})
 
     def action_cancel(self):
+        for rec in self:
+            if rec.stock_consumed:
+                rec._revert_stock_moves()
         self.write({'state': 'cancel'})
 
     def action_draft(self):
@@ -164,6 +211,239 @@ class VidriosOrder(models.Model):
                 'default_amount': self.amount_due,
             },
         }
+
+    # ------------------------------------------------------------------ #
+    # Materiales estimados                                                 #
+    # ------------------------------------------------------------------ #
+
+    def _get_materials_summary(self):
+        """
+        Calcula el consumo de materiales agrupado por material_product_id.
+        Devuelve lista de dicts: {product, qty, uom, name}.
+
+        Reglas de agrupación:
+        - Perfil  → total_cm / bar_length_cm  (barras con decimales)
+        - Vidrio  → suma de áreas (m²)
+        - Lineal  → suma de metros (m)
+        - Herraje → suma de unidades (uds)
+        """
+        self.ensure_one()
+        aggregated = {}  # product.id → {product, qty, uom, name}
+
+        for line in self.line_ids:
+            for formula in line.product_id.formula_ids:
+                if not formula.material_product_id:
+                    continue
+
+                product = formula.material_product_id
+                cut = formula.compute_cut_result(line.width, line.height, line.depth)
+                pieces_per_line = formula.quantity * line.quantity  # piezas totales
+
+                mtype = formula.material_type
+                if mtype == 'profile':
+                    if cut['size'] is None:
+                        continue
+                    total_cm = cut['size'] * pieces_per_line
+                    bar_len = product.bar_length_cm or 640.0
+                    qty = total_cm / bar_len
+                    uom = 'barras'
+
+                elif mtype == 'glass':
+                    if cut['size'] is None:
+                        continue
+                    qty = cut['size'] * pieces_per_line
+                    uom = 'm²'
+
+                elif mtype == 'linear':
+                    if cut['size'] is None:
+                        continue
+                    qty = cut['size'] * pieces_per_line
+                    uom = 'm'
+
+                elif mtype == 'hardware':
+                    qty = pieces_per_line
+                    uom = 'uds'
+
+                else:
+                    continue
+
+                pid = product.id
+                if pid not in aggregated:
+                    aggregated[pid] = {
+                        'product': product,
+                        'qty': 0.0,
+                        'uom': uom,
+                        'name': product.display_name,
+                    }
+                aggregated[pid]['qty'] += qty
+
+        return list(aggregated.values())
+
+    def _recompute_materials(self):
+        """Regenera los registros vidrios.order.material de esta orden."""
+        for order in self:
+            order.material_ids.sudo().unlink()
+            materials = order._get_materials_summary()
+            if not materials:
+                continue
+            vals_list = [
+                {
+                    'order_id': order.id,
+                    'product_id': mat['product'].id,
+                    'qty_needed': round(mat['qty'], 4),
+                    'uom_name': mat['uom'],
+                }
+                for mat in materials
+                if mat['qty'] > 0
+            ]
+            if vals_list:
+                self.env['vidrios.order.material'].sudo().create(vals_list)
+
+    def action_recompute_materials(self):
+        """Botón manual de recálculo."""
+        self._recompute_materials()
+
+    # ------------------------------------------------------------------ #
+    # Descuento automático de stock                                        #
+    # ------------------------------------------------------------------ #
+
+    def _get_stock_locations(self):
+        """Devuelve (ubicación_origen, ubicación_destino_producción)."""
+        warehouse = self.env['stock.warehouse'].sudo().search(
+            [('company_id', '=', self.company_id.id)], limit=1
+        )
+        if not warehouse:
+            raise UserError(_('No se encontró almacén configurado para esta empresa.'))
+
+        location_src = warehouse.lot_stock_id
+
+        try:
+            location_dest = self.env.ref('stock.location_production')
+        except ValueError:
+            location_dest = self.env['stock.location'].sudo().search(
+                [('usage', '=', 'production')], limit=1
+            )
+        if not location_dest:
+            raise UserError(_('No se encontró la ubicación virtual de Producción.'))
+
+        return location_src, location_dest
+
+    def _generate_stock_moves(self):
+        """
+        Crea stock.move por cada material estimado y los marca como hechos.
+        Fuente: almacén interno.  Destino: ubicación virtual de Producción.
+        """
+        self.ensure_one()
+        materials = self._get_materials_summary()
+        if not materials:
+            self.stock_consumed = True
+            return
+
+        location_src, location_dest = self._get_stock_locations()
+
+        move_vals_list = []
+        for mat in materials:
+            qty = round(mat['qty'], 4)
+            if qty <= 0:
+                continue
+            move_vals_list.append({
+                # 'name' no existe en stock.move de Odoo 19; usar description_picking_manual
+                'description_picking_manual': 'Consumo %s — %s' % (self.name, mat['name']),
+                'product_id': mat['product'].id,
+                'product_uom_qty': qty,
+                'product_uom': mat['product'].uom_id.id,
+                'location_id': location_src.id,
+                'location_dest_id': location_dest.id,
+                'origin': self.name,
+                'company_id': self.company_id.id,
+                'vidrios_order_id': self.id,
+            })
+
+        if not move_vals_list:
+            self.stock_consumed = True
+            return
+
+        moves = self.env['stock.move'].sudo().create(move_vals_list)
+        moves.sudo()._action_confirm()
+        moves.sudo()._action_assign()
+
+        # En Odoo 19 _action_done cancela el move si picked=False; hay que setearlo.
+        for move in moves.sudo():
+            move.quantity = move.product_uom_qty  # crea move lines con la qty hecha
+            move.picked = True                     # marca líneas como pickeadas
+
+        moves.sudo()._action_done()
+
+        self.sudo().write({'stock_consumed': True})
+        _logger.info('Stock consumido para orden %s (%d movimientos)', self.name, len(moves))
+
+    def _revert_stock_moves(self):
+        """
+        Crea movimientos inversos para reponer el material al almacén.
+        Se llama cuando la orden se Cancela y ya tiene stock_consumed=True.
+        """
+        self.ensure_one()
+        done_moves = self.stock_move_ids.filtered(lambda m: m.state == 'done')
+        if not done_moves:
+            self.stock_consumed = False
+            return
+
+        location_src, location_dest = self._get_stock_locations()
+
+        return_vals = []
+        for move in done_moves:
+            qty = move.quantity
+            if qty <= 0:
+                continue
+            return_vals.append({
+                'description_picking_manual': 'Dev. %s — %s' % (self.name, move.product_id.display_name),
+                'product_id': move.product_id.id,
+                'product_uom_qty': qty,
+                'product_uom': move.product_uom.id,
+                'location_id': location_dest.id,      # invertido: desde producción
+                'location_dest_id': location_src.id,  # hacia stock
+                'origin': 'Cancel: %s' % self.name,
+                'company_id': self.company_id.id,
+                'vidrios_order_id': self.id,
+                'origin_returned_move_id': move.id,
+            })
+
+        if not return_vals:
+            self.stock_consumed = False
+            return
+
+        rev_moves = self.env['stock.move'].sudo().create(return_vals)
+        rev_moves.sudo()._action_confirm()
+        for move in rev_moves.sudo():
+            move.quantity = move.product_uom_qty
+            move.picked = True
+        rev_moves.sudo()._action_done()
+
+        self.sudo().write({'stock_consumed': False})
+        _logger.info('Stock revertido para orden %s', self.name)
+
+    # ------------------------------------------------------------------ #
+    # Acción "Cargar datos de prueba" (menú)                              #
+    # ------------------------------------------------------------------ #
+
+    @api.model
+    def action_seed_data(self):
+        from ..hooks import _seed_data
+        _seed_data(self.env)
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Datos de prueba'),
+                'message': _('Materiales creados, fórmulas enlazadas y stock cargado correctamente.'),
+                'sticky': False,
+                'type': 'success',
+            },
+        }
+
+    # ------------------------------------------------------------------ #
+    # Acciones de impresión                                                #
+    # ------------------------------------------------------------------ #
 
     def action_print_ticket(self):
         return self.env.ref(
@@ -191,10 +471,11 @@ class VidriosOrder(models.Model):
             'target': 'new',
         }
 
-    # --- Helpers para reportes ---
+    # ------------------------------------------------------------------ #
+    # Helpers para reportes                                                #
+    # ------------------------------------------------------------------ #
 
     def get_print_info(self):
-        """Devuelve dict {user, date} para el encabezado de la Hoja de Ensamble."""
         self.ensure_one()
         from odoo import fields as odoo_fields
         import pytz

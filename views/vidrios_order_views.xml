@@ -107,6 +107,10 @@
                             type="object" class="btn-danger"
                             groups="vidrios_castillo_taller.group_vidrios_admin"
                             invisible="state in ('delivered','cancel')"/>
+                    <button name="action_recompute_materials" string="↻ Materiales"
+                            type="object" class="btn-secondary"
+                            title="Recalcular materiales estimados"
+                            invisible="state in ('delivered','cancel','draft')"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,quoted,deposit,production,ready,delivered"/>
                 </header>
@@ -130,28 +134,111 @@
                     <notebook>
                         <page string="Líneas de cotización" name="lines">
                             <field name="line_ids">
-                                <list editable="bottom">
+
+                                <!-- Lista resumen — clic en una fila abre el popup -->
+                                <list string="Artículos">
                                     <field name="sequence" widget="handle"/>
-                                    <field name="product_id"/>
-                                    <field name="quantity"/>
+                                    <field name="product_id" string="Producto"/>
+                                    <field name="quantity" string="Cant."/>
                                     <field name="width" string="Ancho"/>
                                     <field name="height" string="Alto"/>
-                                    <field name="depth" string="Prof." optional="hide"/>
+                                    <field name="depth" string="Largo" optional="show"/>
                                     <field name="area" string="m²" readonly="1"/>
-                                    <field name="price_unit" string="P/Unit" readonly="1"
-                                           groups="vidrios_castillo_taller.group_vidrios_vendedor,vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_caja"/>
+                                    <field name="char_summary"
+                                           string="Caract." readonly="1"/>
                                     <field name="price_subtotal" string="Subtotal" readonly="1"
                                            groups="vidrios_castillo_taller.group_vidrios_vendedor,vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_caja"/>
-                                    <field name="notes" optional="hide"/>
+                                    <field name="notes" string="Notas" optional="hide"/>
                                 </list>
-                            </field>
-                        </page>
 
-                        <page string="Características" name="characteristics">
-                            <p class="text-muted">
-                                Seleccione una línea para ver/editar sus características,
-                                o ábralas desde el formulario de línea.
-                            </p>
+                                <!-- Popup de edición por línea -->
+                                <form string="Artículo de Orden">
+                                    <group>
+                                        <group string="Producto y cantidad">
+                                            <field name="product_id"
+                                                   options="{'no_create': True}"
+                                                   required="1"/>
+                                            <field name="quantity"/>
+                                            <field name="notes"
+                                                   placeholder="Observaciones de la línea..."/>
+                                        </group>
+                                        <group string="Medidas">
+                                            <field name="width" string="Ancho (cm)"/>
+                                            <field name="height" string="Alto (cm)"/>
+                                            <!--
+                                                product_requires_depth es del PRODUCTO, no de la línea.
+                                                Se carga invisible para que el campo depth lo use
+                                                en su condición invisible.
+                                            -->
+                                            <field name="product_requires_depth" invisible="1"/>
+                                            <field name="depth" string="Largo (cm)"
+                                                   invisible="not product_requires_depth"/>
+                                            <field name="area" string="Área m²" readonly="1"/>
+                                            <field name="price_unit" string="Precio unitario"
+                                                   readonly="1"
+                                                   groups="vidrios_castillo_taller.group_vidrios_vendedor,vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_caja"/>
+                                            <field name="price_subtotal" string="Subtotal"
+                                                   readonly="1"
+                                                   groups="vidrios_castillo_taller.group_vidrios_vendedor,vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_caja"/>
+                                        </group>
+                                    </group>
+
+                                    <!-- Características del producto -->
+                                    <separator string="Características"
+                                               invisible="not characteristic_value_ids"/>
+                                    <field name="characteristic_value_ids"
+                                           invisible="not characteristic_value_ids"
+                                           nolabel="1">
+                                        <list editable="bottom" create="false" delete="false">
+
+                                            <!--
+                                                characteristic_id y field_type son readonly, pero
+                                                force_save="1" fuerza al cliente a enviarlos en el
+                                                payload de guardado. Sin esto, Odoo omite los campos
+                                                readonly y la BD rechaza la fila por falta de
+                                                characteristic_id (required=True).
+                                            -->
+                                            <field name="characteristic_id"
+                                                   column_invisible="1"
+                                                   readonly="1"
+                                                   force_save="1"/>
+                                            <field name="field_type"
+                                                   column_invisible="1"
+                                                   force_save="1"/>
+
+                                            <!-- Nombre de la característica (solo lectura) -->
+                                            <field name="char_name"
+                                                   string="Característica"
+                                                   readonly="1"/>
+
+                                            <!--
+                                                Columna "Valor" adaptativa según field_type:
+                                                - select  → desplegable value_option_id
+                                                - char    → texto libre value_char
+                                                - boolean → toggle value_boolean
+                                                En Odoo 19, cuando TODAS las filas tienen un campo
+                                                invisible, el encabezado de columna se oculta.
+                                                Para un producto con solo select, solo se ve
+                                                la columna de desplegable.
+                                            -->
+                                            <field name="value_option_id"
+                                                   string="Valor"
+                                                   invisible="field_type != 'select'"
+                                                   domain="[('characteristic_id', '=', characteristic_id)]"
+                                                   options="{'no_create': True, 'no_open': True}"/>
+                                            <field name="value_char"
+                                                   string="Valor"
+                                                   invisible="field_type != 'char'"/>
+                                            <field name="value_boolean"
+                                                   string="Sí/No"
+                                                   widget="boolean_toggle"
+                                                   invisible="field_type != 'boolean'"/>
+
+                                        </list>
+                                    </field>
+                                </form>
+
+                            </field>
                         </page>
 
                         <page string="Extras" name="extras">
@@ -174,6 +261,35 @@
                                     <field name="state" string="Estado" widget="badge"/>
                                 </list>
                             </field>
+                        </page>
+
+                        <!-- ===== MATERIALES ESTIMADOS ===== -->
+                        <page string="Materiales estimados" name="materials"
+                              groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_taller">
+                            <group>
+                                <group>
+                                    <field name="consume_stock"
+                                           groups="vidrios_castillo_taller.group_vidrios_admin"/>
+                                    <field name="stock_consumed" readonly="1"
+                                           invisible="not stock_consumed"
+                                           groups="vidrios_castillo_taller.group_vidrios_admin"/>
+                                </group>
+                            </group>
+                            <field name="material_ids" readonly="1" nolabel="1">
+                                <list>
+                                    <field name="product_id" string="Material"/>
+                                    <field name="qty_needed" string="Necesario"
+                                           digits="[10,4]"/>
+                                    <field name="uom_name" string="Unidad"/>
+                                    <field name="qty_available" string="Disponible"
+                                           decoration-danger="shortage"
+                                           decoration-success="not shortage and qty_available > 0"/>
+                                    <field name="shortage" invisible="1"/>
+                                </list>
+                            </field>
+                            <p class="text-muted" invisible="material_ids">
+                                Sin líneas de cotización enlazadas a productos de inventario.
+                            </p>
                         </page>
 
                         <page string="Notas / Fotos" name="notes_page">

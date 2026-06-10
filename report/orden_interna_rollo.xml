@@ -171,19 +171,18 @@
                                     <div class="row pieza">
                                         <span class="rn"><t t-esc="cut['name']"/></span>
                                         <span class="rv">
-                                            <t t-if="cut.get('cut_width') is not None">
-                                                <t t-esc="cut['quantity']"/>x
-                                                <t t-esc="cut['cut_width']"/>x<t t-esc="cut['cut_height']"/>cm
+                                            <t t-if="cut.get('panel_str')">
+                                                <t t-esc="'%g' % cut['quantity']"/>x <t t-esc="cut['panel_str']"/>
                                             </t>
                                             <t t-elif="cut['unit'] == 'uds'">
-                                                <t t-esc="cut['quantity']"/> uds
+                                                <t t-esc="'%g' % cut['quantity']"/> uds
                                             </t>
                                             <t t-elif="cut['size'] is not None">
-                                                <t t-esc="cut['quantity']"/>x
+                                                <t t-esc="'%g' % cut['quantity']"/>x
                                                 <t t-esc="cut['size']"/> <t t-esc="cut['unit']"/>
                                             </t>
                                             <t t-else="">
-                                                <t t-esc="cut['quantity']"/> uds
+                                                <t t-esc="'%g' % cut['quantity']"/> uds
                                             </t>
                                         </span>
                                     </div>
@@ -322,6 +321,16 @@
                                 <t t-esc="line.product_id.name"/>
                                 <span style="font-weight:normal;"> x<t t-esc="line.quantity"/></span>
                             </div>
+                            <!-- Medida general -->
+                            <t t-if="line.width or line.height">
+                                <div class="xs" style="margin-left:4px;">
+                                    <t t-esc="line.width"/> x <t t-esc="line.height"/> cm
+                                    <t t-if="line.depth and line.product_requires_depth">
+                                        x <t t-esc="line.depth"/> cm
+                                    </t>
+                                </div>
+                            </t>
+                            <!-- Características visibles en ticket -->
                             <t t-foreach="line.characteristic_value_ids" t-as="cv">
                                 <t t-if="cv.visible_on_ticket and cv.get_display_value()">
                                     <div class="xs" style="margin-left:4px;">

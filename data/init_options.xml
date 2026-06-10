@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- noupdate="0": se ejecuta en cada instalación Y actualización del módulo -->
+<odoo noupdate="0">
+    <function model="vidrios.characteristic" name="sync_all_options"/>
+</odoo>
