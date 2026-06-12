@@ -308,23 +308,28 @@ class VidriosOrder(models.Model):
     # ------------------------------------------------------------------ #
 
     def _get_stock_locations(self):
-        """Devuelve (ubicación_origen, ubicación_destino_producción)."""
+        """Devuelve (ubicación_origen, ubicación_destino_producción) para la empresa de la orden."""
+        company = self.company_id or self.env.company
+
         warehouse = self.env['stock.warehouse'].sudo().search(
-            [('company_id', '=', self.company_id.id)], limit=1
+            [('company_id', '=', company.id)], limit=1
         )
         if not warehouse:
-            raise UserError(_('No se encontró almacén configurado para esta empresa.'))
+            raise UserError(_(
+                'No se encontró almacén configurado para la empresa "%s".'
+            ) % company.name)
 
         location_src = warehouse.lot_stock_id
 
-        try:
-            location_dest = self.env.ref('stock.location_production')
-        except ValueError:
-            location_dest = self.env['stock.location'].sudo().search(
-                [('usage', '=', 'production')], limit=1
-            )
+        location_dest = self.env['stock.location'].sudo().search(
+            [('usage', '=', 'production'), ('company_id', '=', company.id)],
+            limit=1,
+        )
         if not location_dest:
-            raise UserError(_('No se encontró la ubicación virtual de Producción.'))
+            raise UserError(_(
+                'No se encontró la ubicación virtual de Producción '
+                'para la empresa "%s".'
+            ) % company.name)
 
         return location_src, location_dest
 

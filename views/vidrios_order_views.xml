@@ -128,6 +128,7 @@
                         </group>
                         <group string="Entrega y notas">
                             <field name="delivery_date"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
                         </group>
                     </group>
 
