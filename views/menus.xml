@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- Menú raíz de la aplicación -->
+    <!-- Menú raíz de la aplicación.
+         Sin groups: cualquier usuario interno ve el ícono en el dashboard.
+         La seguridad granular se aplica en los submenús y en ir.model.access. -->
     <menuitem id="menu_vidrios_root"
               name="Taller Vidrios"
               sequence="50"
-              web_icon="vidrios_castillo_taller,static/description/icon.png"
-              groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_vendedor,vidrios_castillo_taller.group_vidrios_taller,vidrios_castillo_taller.group_vidrios_caja"/>
+              web_icon="vidrios_castillo_taller,static/description/icon.png"/>
 
     <!-- Nivel 1: Órdenes -->
     <menuitem id="menu_vidrios_ordenes"
