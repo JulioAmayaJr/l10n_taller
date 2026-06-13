@@ -111,9 +111,11 @@ class VidriosOrderLine(models.Model):
     def action_duplicate_line(self):
         """Crea una copia exacta de esta línea (con sus características) en la misma orden."""
         self.ensure_one()
-        if not (isinstance(self.id, int) and self.id > 0):
-            raise UserError(_('Guarda la orden antes de duplicar líneas.'))
-        self.copy()
+        if not self.order_id or not (isinstance(self.id, int) and self.id > 0):
+            raise UserError(_('Guarda la orden antes de duplicar la línea.'))
+        # order_id se pasa explícitamente: el ORM no siempre lo propaga
+        # al copiar el lado "inverse" de un One2many.
+        self.copy(default={'order_id': self.order_id.id})
         self.order_id._recompute_materials()
         return True
 

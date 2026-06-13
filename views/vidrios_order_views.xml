@@ -275,14 +275,18 @@
                                         </list>
                                     </field>
 
-                                    <!-- Botón duplicar al pie del popup -->
+                                    <!-- Botón duplicar al pie del popup.
+                                         invisible="not id": solo aparece cuando la línea
+                                         ya está persistida (id real); evita el error en
+                                         líneas nuevas aún no guardadas. -->
                                     <div class="mt-3"
                                          groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_vendedor">
                                         <button name="action_duplicate_line"
                                                 string="⧉ Duplicar esta línea"
                                                 type="object"
                                                 class="btn-secondary btn-sm"
-                                                title="Crea una copia de esta línea en la misma orden"/>
+                                                title="Crea una copia de esta línea en la misma orden"
+                                                invisible="not id"/>
                                     </div>
                                 </form>
 
