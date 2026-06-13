@@ -137,7 +137,9 @@
                             <field name="line_ids">
 
                                 <!-- Lista resumen — clic en una fila abre el popup -->
-                                <list string="Artículos">
+                                <!-- decoration-warning resalta filas con precio manual -->
+                                <list string="Artículos"
+                                      decoration-warning="price_manual">
                                     <field name="sequence" widget="handle"/>
                                     <field name="product_id" string="Producto"/>
                                     <field name="quantity" string="Cant."/>
@@ -147,9 +149,20 @@
                                     <field name="area" string="m²" readonly="1"/>
                                     <field name="char_summary"
                                            string="Caract." readonly="1"/>
+                                    <!-- price_manual: invisible pero cargado para decoration y onchange -->
+                                    <field name="price_manual" column_invisible="1"/>
+                                    <field name="price_unit" string="P.Unit."
+                                           groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_vendedor"/>
                                     <field name="price_subtotal" string="Subtotal" readonly="1"
                                            groups="vidrios_castillo_taller.group_vidrios_vendedor,vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_caja"/>
                                     <field name="notes" string="Notas" optional="hide"/>
+                                    <!-- Botón duplicar por fila -->
+                                    <button name="action_duplicate_line"
+                                            string=""
+                                            type="object"
+                                            icon="fa-clone"
+                                            title="Duplicar esta línea"
+                                            class="btn-sm"/>
                                 </list>
 
                                 <!-- Popup de edición por línea -->
@@ -175,13 +188,37 @@
                                             <field name="depth" string="Largo (cm)"
                                                    invisible="not product_requires_depth"/>
                                             <field name="area" string="Área m²" readonly="1"/>
-                                            <field name="price_unit" string="Precio unitario"
-                                                   readonly="1"
-                                                   groups="vidrios_castillo_taller.group_vidrios_vendedor,vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_caja"/>
-                                            <field name="price_subtotal" string="Subtotal"
-                                                   readonly="1"
-                                                   groups="vidrios_castillo_taller.group_vidrios_vendedor,vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_caja"/>
                                         </group>
+                                    </group>
+
+                                    <!-- Sección de precio: editable para admin/vendedor -->
+                                    <group string="Precio"
+                                           groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_vendedor">
+                                        <group>
+                                            <!-- price_manual visible como check pequeño; solo lectura -->
+                                            <field name="price_manual"
+                                                   string="Precio fijado manualmente"
+                                                   readonly="1"
+                                                   widget="boolean_toggle"/>
+                                            <!-- Botón para restaurar precio de fórmula -->
+                                            <button name="action_reset_price"
+                                                    string="↺ Restaurar precio de fórmula"
+                                                    type="object"
+                                                    class="btn-link btn-sm text-warning"
+                                                    invisible="not price_manual"/>
+                                        </group>
+                                        <group>
+                                            <field name="price_unit" string="Precio unitario"/>
+                                            <field name="price_subtotal" string="Subtotal"
+                                                   readonly="1"/>
+                                        </group>
+                                    </group>
+                                    <!-- Subtotal visible para caja (solo lectura) -->
+                                    <group groups="vidrios_castillo_taller.group_vidrios_caja">
+                                        <field name="price_unit" string="Precio unitario"
+                                               readonly="1"/>
+                                        <field name="price_subtotal" string="Subtotal"
+                                               readonly="1"/>
                                     </group>
 
                                     <!-- Características del producto -->
@@ -237,6 +274,16 @@
 
                                         </list>
                                     </field>
+
+                                    <!-- Botón duplicar al pie del popup -->
+                                    <div class="mt-3"
+                                         groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_vendedor">
+                                        <button name="action_duplicate_line"
+                                                string="⧉ Duplicar esta línea"
+                                                type="object"
+                                                class="btn-secondary btn-sm"
+                                                title="Crea una copia de esta línea en la misma orden"/>
+                                    </div>
                                 </form>
 
                             </field>

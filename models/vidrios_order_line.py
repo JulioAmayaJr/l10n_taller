@@ -1,4 +1,5 @@
-from odoo import models, fields, api
+from odoo import models, fields, api, _
+from odoo.exceptions import UserError
 
 
 class VidriosOrderLine(models.Model):
@@ -24,12 +25,14 @@ class VidriosOrderLine(models.Model):
     area = fields.Float(
         'Área (m²)', compute='_compute_area', store=True, digits=(10, 4)
     )
+    # price_manual=True bloquea el recompute automático; el usuario fijó el precio a mano.
+    price_manual = fields.Boolean('Precio manual', default=False)
     price_unit = fields.Monetary(
-        'Precio unitario', compute='_compute_price', store=True,
+        'Precio unitario', compute='_compute_price_unit', store=True, readonly=False,
         currency_field='currency_id'
     )
     price_subtotal = fields.Monetary(
-        'Subtotal', compute='_compute_price', store=True,
+        'Subtotal', compute='_compute_subtotal', store=True,
         currency_field='currency_id'
     )
 
@@ -68,16 +71,51 @@ class VidriosOrderLine(models.Model):
         for line in self:
             line.area = (line.width / 100.0) * (line.height / 100.0)
 
-    @api.depends('area', 'product_id.price_m2', 'product_id.min_price', 'quantity')
-    def _compute_price(self):
+    @api.depends('area', 'product_id.price_m2', 'product_id.min_price', 'price_manual')
+    def _compute_price_unit(self):
         for line in self:
+            if line.price_manual:
+                continue  # precio fijado manualmente: conserva el valor almacenado
             if line.product_id:
                 base = line.area * line.product_id.price_m2
-                price_unit = max(base, line.product_id.min_price)
+                line.price_unit = max(base, line.product_id.min_price)
             else:
-                price_unit = 0.0
-            line.price_unit = price_unit
-            line.price_subtotal = price_unit * line.quantity
+                line.price_unit = 0.0
+
+    @api.depends('price_unit', 'quantity')
+    def _compute_subtotal(self):
+        for line in self:
+            line.price_subtotal = (line.price_unit or 0.0) * line.quantity
+
+    def _formula_price(self):
+        """Precio que devolvería la fórmula (sin override manual)."""
+        self.ensure_one()
+        if not self.product_id:
+            return 0.0
+        base = self.area * self.product_id.price_m2
+        return max(base, self.product_id.min_price)
+
+    @api.onchange('price_unit')
+    def _onchange_price_unit(self):
+        """Marca price_manual=True solo cuando el usuario cambia el precio respecto a la fórmula."""
+        if self.price_unit != self._formula_price():
+            self.price_manual = True
+
+    def action_reset_price(self):
+        """Restaura el precio de fórmula: borra el override manual y recalcula."""
+        self.ensure_one()
+        self.price_manual = False
+        self._compute_price_unit()
+        self._compute_subtotal()
+
+    def action_duplicate_line(self):
+        """Crea una copia exacta de esta línea (con sus características) en la misma orden."""
+        self.ensure_one()
+        if not (isinstance(self.id, int) and self.id > 0):
+            raise UserError(_('Guarda la orden antes de duplicar líneas.'))
+        self.copy()
+        self.order_id._recompute_materials()
+        return True
 
     @api.onchange('product_id')
     def _onchange_product_id(self):
