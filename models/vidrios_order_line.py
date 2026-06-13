@@ -109,15 +109,35 @@ class VidriosOrderLine(models.Model):
         self._compute_subtotal()
 
     def action_duplicate_line(self):
-        """Crea una copia exacta de esta línea (con sus características) en la misma orden."""
+        """Duplica la línea (botón ícono en la lista). Cierra el dialog y refresca la lista."""
         self.ensure_one()
         if not self.order_id or not (isinstance(self.id, int) and self.id > 0):
             raise UserError(_('Guarda la orden antes de duplicar la línea.'))
-        # order_id se pasa explícitamente: el ORM no siempre lo propaga
-        # al copiar el lado "inverse" de un One2many.
         self.copy(default={'order_id': self.order_id.id})
         self.order_id._recompute_materials()
         return True
+
+    def action_save_and_duplicate(self):
+        """
+        Botón 'Guardar y duplicar' del footer del dialog.
+        Odoo guarda la línea actual antes de llamar al método (type=object),
+        así self ya tiene id real y order_id persistido.
+        Crea una copia exacta y abre esa copia en un nuevo dialog.
+        """
+        self.ensure_one()
+        if not self.order_id or not self.order_id.id:
+            raise UserError(_('Guarda la orden antes de duplicar la línea.'))
+        new_line = self.copy(default={'order_id': self.order_id.id})
+        self.order_id._recompute_materials()
+        view = self.env.ref('vidrios_castillo_taller.view_vidrios_order_line_form')
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'vidrios.order.line',
+            'res_id': new_line.id,
+            'view_mode': 'form',
+            'views': [(view.id, 'form')],
+            'target': 'new',
+        }
 
     @api.onchange('product_id')
     def _onchange_product_id(self):
