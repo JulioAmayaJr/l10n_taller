@@ -125,8 +125,12 @@ class VidriosOrderLine(models.Model):
         Crea una copia exacta y abre esa copia en un nuevo dialog.
         """
         self.ensure_one()
-        if not self.order_id or not self.order_id.id:
-            raise UserError(_('Guarda la orden antes de duplicar la línea.'))
+        # isinstance(id, int) también descarta NewId (que es True en bool pero no int)
+        if not self.order_id or not (isinstance(self.order_id.id, int) and self.order_id.id > 0):
+            raise UserError(_(
+                'Guarda la orden (botón nube/guardar) antes de duplicar líneas. '
+                'La copia necesita una orden ya guardada.'
+            ))
         new_line = self.copy(default={'order_id': self.order_id.id})
         self.order_id._recompute_materials()
         view = self.env.ref('vidrios_castillo_taller.view_vidrios_order_line_form')

@@ -347,15 +347,33 @@
                                         </list>
                                     </field>
 
-                                    <!-- Footer del dialog: añade "Guardar y duplicar"
-                                         junto a los botones nativos de Odoo.
-                                         type=object → Odoo guarda primero, luego llama al método. -->
+                                    <!--
+                                        Footer del dialog: hay que declarar los 4 botones
+                                        explícitamente porque en Odoo 19 definir <footer>
+                                        reemplaza los nativos en lugar de añadirse a ellos.
+                                        special="save"     → Guardar y cerrar
+                                        special="save_new" → Guardar y crear nuevo
+                                        special="cancel"   → Descartar
+                                        type="object"      → llama al método server-side
+                                                             (Odoo guarda antes de la llamada)
+                                    -->
                                     <footer>
+                                        <button string="Guardar y cerrar"
+                                                special="save"
+                                                class="btn-primary"
+                                                data-hotkey="q"/>
+                                        <button string="Guardar y crear nuevo"
+                                                special="save_new"
+                                                class="btn-secondary"/>
                                         <button name="action_save_and_duplicate"
                                                 string="Guardar y duplicar"
                                                 type="object"
-                                                class="btn-primary"
+                                                class="btn-secondary"
                                                 groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_vendedor"/>
+                                        <button string="Descartar"
+                                                special="cancel"
+                                                class="btn-secondary"
+                                                data-hotkey="x"/>
                                     </footer>
                                 </form>
 
