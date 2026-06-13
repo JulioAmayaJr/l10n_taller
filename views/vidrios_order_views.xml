@@ -348,33 +348,22 @@
                                     </field>
 
                                     <!--
-                                        Footer del dialog: hay que declarar los 4 botones
-                                        explícitamente porque en Odoo 19 definir <footer>
-                                        reemplaza los nativos en lugar de añadirse a ellos.
-                                        special="save"     → Guardar y cerrar
-                                        special="save_new" → Guardar y crear nuevo
-                                        special="cancel"   → Descartar
-                                        type="object"      → llama al método server-side
-                                                             (Odoo guarda antes de la llamada)
+                                        Sin <footer> personalizado: Odoo 19 renderiza
+                                        automáticamente los botones nativos del dialog
+                                        (Guardar y cerrar / Guardar y crear nuevo / Descartar).
+                                        El botón "Guardar y duplicar" va en el cuerpo del form.
+                                        invisible="not id": solo visible cuando la línea ya está
+                                        persistida (id real); evita llamadas sobre registros NewId.
                                     -->
-                                    <footer>
-                                        <button string="Guardar y cerrar"
-                                                special="save"
-                                                class="btn-primary"
-                                                data-hotkey="q"/>
-                                        <button string="Guardar y crear nuevo"
-                                                special="save_new"
-                                                class="btn-secondary"/>
+                                    <div class="mt-3"
+                                         groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_vendedor">
                                         <button name="action_save_and_duplicate"
                                                 string="Guardar y duplicar"
                                                 type="object"
-                                                class="btn-secondary"
-                                                groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_vendedor"/>
-                                        <button string="Descartar"
-                                                special="cancel"
-                                                class="btn-secondary"
-                                                data-hotkey="x"/>
-                                    </footer>
+                                                class="btn-secondary btn-sm"
+                                                title="Guarda esta línea y abre una copia lista para editar"
+                                                invisible="not id"/>
+                                    </div>
                                 </form>
 
                             </field>
