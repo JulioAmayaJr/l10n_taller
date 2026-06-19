@@ -44,6 +44,21 @@ class VidriosOrderLine(models.Model):
     )
     notes = fields.Char('Notas')
 
+    # Complementos seleccionables por línea
+    available_modulo_ids = fields.Many2many(
+        'vidrios.product',
+        related='product_id.modulo_ids',
+        string='Complementos disponibles',
+        readonly=True,
+    )
+    modulo_ids = fields.Many2many(
+        'vidrios.product',
+        relation='vidrios_order_line_modulo_rel',
+        column1='line_id',
+        column2='modulo_id',
+        string='Complementos',
+    )
+
     # Resumen rápido de características visibles en ticket, para la columna de la lista
     char_summary = fields.Char(
         'Resumen características',   # distinto de 'Características' de characteristic_value_ids
@@ -147,6 +162,7 @@ class VidriosOrderLine(models.Model):
     def _onchange_product_id(self):
         if not self.product_id:
             self.characteristic_value_ids = [(5, 0, 0)]
+            self.modulo_ids = [(5, 0, 0)]
             return
 
         # self._origin.product_id es el valor GUARDADO en BD (False para nuevas líneas).
@@ -155,6 +171,9 @@ class VidriosOrderLine(models.Model):
         # guardado/Cotizar, limpie los valores ya capturados.
         origin_product_id = self._origin.product_id.id if self._origin else False
         product_changed = (origin_product_id != self.product_id.id)
+
+        if product_changed:
+            self.modulo_ids = [(5, 0, 0)]
 
         existing_char_ids = {
             cv.characteristic_id.id
@@ -210,10 +229,22 @@ class VidriosOrderLine(models.Model):
         if new_rows:
             self.characteristic_value_ids = new_rows
 
+    def _get_formulas_by_source(self):
+        """
+        Devuelve lista de (source_name, formula_recordset) para el producto principal
+        más los complementos seleccionados en esta línea.
+        Solo un nivel: no se recursea en módulos de módulos.
+        """
+        self.ensure_one()
+        pairs = [(self.product_id.name, self.product_id.formula_ids.sorted('sequence'))]
+        for modulo in self.modulo_ids:
+            pairs.append((modulo.name, modulo.formula_ids.sorted('sequence')))
+        return pairs
+
     def get_cutlist(self):
         """
         Genera lista de corte aplicando fórmulas del producto a las medidas.
-        Claves: name, code, material_type, quantity, size, unit, notes.
+        Claves: source, name, code, material_type, quantity, size, unit, notes.
         Vidrio agrega: cut_width/cut_height (alias), cut_a/cut_b, dim_a_label/dim_b_label, panel_str.
         """
         self.ensure_one()
@@ -221,27 +252,29 @@ class VidriosOrderLine(models.Model):
         material_labels = dict(
             self.env['vidrios.formula']._fields['material_type'].selection
         )
-        for formula in self.product_id.formula_ids.sorted('sequence'):
-            cut = formula.compute_cut_result(self.width, self.height, self.depth)
-            cut_a = cut.get('cut_a')
-            cut_b = cut.get('cut_b')
-            entry = {
-                'name': formula.material_product_id.display_name or '',
-                'code': formula.material_product_id.default_code or '',
-                'material_type': material_labels.get(formula.material_type, formula.material_type),
-                'quantity': formula.quantity * self.quantity,
-                'size': cut['size'],
-                'unit': cut['unit'],
-                'cut_width': cut.get('cut_width'),
-                'cut_height': cut.get('cut_height'),
-                'cut_a': cut_a,
-                'cut_b': cut_b,
-                'dim_a_label': cut.get('dim_a_label', ''),
-                'dim_b_label': cut.get('dim_b_label', ''),
-                'panel_str': ('%.1f × %.1f cm' % (cut_a, cut_b)) if cut_a is not None else '',
-                'notes': formula.notes or '',
-            }
-            result.append(entry)
+        for source_name, formulas in self._get_formulas_by_source():
+            for formula in formulas:
+                cut = formula.compute_cut_result(self.width, self.height, self.depth)
+                cut_a = cut.get('cut_a')
+                cut_b = cut.get('cut_b')
+                entry = {
+                    'source': source_name,
+                    'name': formula.material_product_id.display_name or '',
+                    'code': formula.material_product_id.default_code or '',
+                    'material_type': material_labels.get(formula.material_type, formula.material_type),
+                    'quantity': formula.quantity * self.quantity,
+                    'size': cut['size'],
+                    'unit': cut['unit'],
+                    'cut_width': cut.get('cut_width'),
+                    'cut_height': cut.get('cut_height'),
+                    'cut_a': cut_a,
+                    'cut_b': cut_b,
+                    'dim_a_label': cut.get('dim_a_label', ''),
+                    'dim_b_label': cut.get('dim_b_label', ''),
+                    'panel_str': ('%.1f × %.1f cm' % (cut_a, cut_b)) if cut_a is not None else '',
+                    'notes': formula.notes or '',
+                }
+                result.append(entry)
         return result
 
     def get_assembly_list(self):
@@ -251,43 +284,46 @@ class VidriosOrderLine(models.Model):
           - profile: length_str
           - linear : length_str
           - hardware: unit='uds', sin medidas
+        Cada entrada incluye 'source' = nombre del producto que generó la pieza.
         """
         self.ensure_one()
         result = []
-        for formula in self.product_id.formula_ids.sorted('sequence'):
-            cut = formula.compute_cut_result(self.width, self.height, self.depth)
-            cut_a = cut.get('cut_a')
-            cut_b = cut.get('cut_b')
-            entry = {
-                'code': formula.material_product_id.default_code or '',
-                'name': formula.material_product_id.display_name or '',
-                'material_type': formula.material_type,
-                'unit': cut['unit'],
-                'qty_each': formula.quantity,
-                'qty_total': formula.quantity * self.quantity,
-                'width_str': '',
-                'height_str': '',
-                'length_str': '',
-                'dim_a_label': cut.get('dim_a_label', 'Ancho'),
-                'dim_b_label': cut.get('dim_b_label', 'Alto'),
-                'panel_str': ('%.1f × %.1f cm' % (cut_a, cut_b)) if cut_a is not None else '',
-                'notes': formula.notes or '',
-            }
-            if formula.material_type == 'glass' and cut_a is not None:
-                entry['width_str'] = '%.1f cm' % cut_a
-                entry['height_str'] = '%.1f cm' % cut_b
-            elif formula.material_type == 'profile' and cut['size'] is not None:
-                entry['length_str'] = '%.1f cm' % cut['size']
-            elif formula.material_type == 'linear' and cut['size'] is not None:
-                entry['length_str'] = ('%g m' % round(cut['size'], 3))
-            result.append(entry)
+        for source_name, formulas in self._get_formulas_by_source():
+            for formula in formulas:
+                cut = formula.compute_cut_result(self.width, self.height, self.depth)
+                cut_a = cut.get('cut_a')
+                cut_b = cut.get('cut_b')
+                entry = {
+                    'source': source_name,
+                    'code': formula.material_product_id.default_code or '',
+                    'name': formula.material_product_id.display_name or '',
+                    'material_type': formula.material_type,
+                    'unit': cut['unit'],
+                    'qty_each': formula.quantity,
+                    'qty_total': formula.quantity * self.quantity,
+                    'width_str': '',
+                    'height_str': '',
+                    'length_str': '',
+                    'dim_a_label': cut.get('dim_a_label', 'Ancho'),
+                    'dim_b_label': cut.get('dim_b_label', 'Alto'),
+                    'panel_str': ('%.1f × %.1f cm' % (cut_a, cut_b)) if cut_a is not None else '',
+                    'notes': formula.notes or '',
+                }
+                if formula.material_type == 'glass' and cut_a is not None:
+                    entry['width_str'] = '%.1f cm' % cut_a
+                    entry['height_str'] = '%.1f cm' % cut_b
+                elif formula.material_type == 'profile' and cut['size'] is not None:
+                    entry['length_str'] = '%.1f cm' % cut['size']
+                elif formula.material_type == 'linear' and cut['size'] is not None:
+                    entry['length_str'] = ('%g m' % round(cut['size'], 3))
+                result.append(entry)
         return result
 
     # ------------------------------------------------------------------ #
     # Triggers para recálculo de materiales estimados                     #
     # ------------------------------------------------------------------ #
 
-    _MATERIAL_TRIGGER_FIELDS = {'width', 'height', 'depth', 'quantity', 'product_id'}
+    _MATERIAL_TRIGGER_FIELDS = {'width', 'height', 'depth', 'quantity', 'product_id', 'modulo_ids'}
 
     def write(self, vals):
         res = super().write(vals)
@@ -312,28 +348,30 @@ class VidriosOrderLine(models.Model):
         Resumen de materiales agrupados por producto de inventario.
         Retorna lista de {material_type, name, code, total, unit}.
         El mismo producto puede aparecer en múltiples fórmulas; sus totales se suman.
+        Incluye fórmulas del producto principal y de los complementos seleccionados.
         """
         self.ensure_one()
         summary = {}
-        for formula in self.product_id.formula_ids:
-            cut = formula.compute_cut_result(self.width, self.height, self.depth)
-            # Clave: (tipo, id de producto) para agregar mismo material de distintas fórmulas
-            pid = formula.material_product_id.id or 0
-            key = (formula.material_type, pid, formula.id if not pid else 0)
-            qty = formula.quantity * self.quantity
-            if formula.material_type == 'linear' and cut['size'] is not None:
-                total = round(cut['size'] * qty, 3)
-            elif formula.material_type == 'hardware':
-                total = qty
-            else:
-                total = None
-            if total is not None:
-                if key not in summary:
-                    summary[key] = {
-                        'name': formula.material_product_id.display_name or '',
-                        'code': formula.material_product_id.default_code or '',
-                        'total': 0.0,
-                        'unit': cut['unit'],
-                    }
-                summary[key]['total'] += total
+        for _source, formulas in self._get_formulas_by_source():
+            for formula in formulas:
+                cut = formula.compute_cut_result(self.width, self.height, self.depth)
+                # Clave: (tipo, id de producto) para agregar mismo material de distintas fórmulas
+                pid = formula.material_product_id.id or 0
+                key = (formula.material_type, pid, formula.id if not pid else 0)
+                qty = formula.quantity * self.quantity
+                if formula.material_type == 'linear' and cut['size'] is not None:
+                    total = round(cut['size'] * qty, 3)
+                elif formula.material_type == 'hardware':
+                    total = qty
+                else:
+                    total = None
+                if total is not None:
+                    if key not in summary:
+                        summary[key] = {
+                            'name': formula.material_product_id.display_name or '',
+                            'code': formula.material_product_id.default_code or '',
+                            'total': 0.0,
+                            'unit': cut['unit'],
+                        }
+                    summary[key]['total'] += total
         return list(summary.values())

@@ -69,6 +69,16 @@
                                invisible="field_type != 'boolean'"/>
                     </list>
                 </field>
+
+                <field name="available_modulo_ids" invisible="1"/>
+                <separator string="Complementos"
+                           invisible="not available_modulo_ids"/>
+                <field name="modulo_ids" widget="many2many_tags"
+                       string="Complementos activos"
+                       invisible="not available_modulo_ids"
+                       domain="[('id','in',available_modulo_ids)]"
+                       nolabel="1"
+                       options="{'no_create': True, 'no_open': True}"/>
             </form>
         </field>
     </record>
@@ -346,6 +356,17 @@
 
                                         </list>
                                     </field>
+
+                                    <!-- Complementos seleccionables -->
+                                    <field name="available_modulo_ids" invisible="1"/>
+                                    <separator string="Complementos"
+                                               invisible="not available_modulo_ids"/>
+                                    <field name="modulo_ids" widget="many2many_tags"
+                                           string="Complementos activos"
+                                           invisible="not available_modulo_ids"
+                                           domain="[('id','in',available_modulo_ids)]"
+                                           nolabel="1"
+                                           options="{'no_create': True, 'no_open': True}"/>
 
                                     <!--
                                         Sin <footer> personalizado: Odoo 19 renderiza

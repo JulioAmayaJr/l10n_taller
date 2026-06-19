@@ -372,7 +372,18 @@
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        <t t-set="asm_prev_src" t-value="None"/>
                                         <t t-foreach="asm" t-as="item">
+                                            <!-- Subencabezado por source solo si hay complementos -->
+                                            <t t-if="line.modulo_ids and item.get('source') != asm_prev_src">
+                                                <tr>
+                                                    <td colspan="8"
+                                                        style="background:#d8e4f0;font-weight:bold;font-size:7.5pt;text-align:center;padding:2px 4px;border:0.5px solid #999;">
+                                                        -- <t t-esc="item.get('source','')"/> --
+                                                    </td>
+                                                </tr>
+                                                <t t-set="asm_prev_src" t-value="item.get('source')"/>
+                                            </t>
                                             <tr>
                                                 <td><t t-esc="item['code']"/></td>
                                                 <td><t t-esc="item['name']"/></td>

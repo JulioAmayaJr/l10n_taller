@@ -231,51 +231,52 @@ class VidriosOrder(models.Model):
         aggregated = {}  # product.id → {product, qty, uom, name}
 
         for line in self.line_ids:
-            for formula in line.product_id.formula_ids:
-                if not formula.material_product_id:
-                    continue
-
-                product = formula.material_product_id
-                cut = formula.compute_cut_result(line.width, line.height, line.depth)
-                pieces_per_line = formula.quantity * line.quantity  # piezas totales
-
-                mtype = formula.material_type
-                if mtype == 'profile':
-                    if cut['size'] is None:
+            for _source, formulas in line._get_formulas_by_source():
+                for formula in formulas:
+                    if not formula.material_product_id:
                         continue
-                    total_cm = cut['size'] * pieces_per_line
-                    bar_len = product.bar_length_cm or 640.0
-                    qty = total_cm / bar_len
-                    uom = 'barras'
 
-                elif mtype == 'glass':
-                    if cut['size'] is None:
+                    product = formula.material_product_id
+                    cut = formula.compute_cut_result(line.width, line.height, line.depth)
+                    pieces_per_line = formula.quantity * line.quantity
+
+                    mtype = formula.material_type
+                    if mtype == 'profile':
+                        if cut['size'] is None:
+                            continue
+                        total_cm = cut['size'] * pieces_per_line
+                        bar_len = product.bar_length_cm or 640.0
+                        qty = total_cm / bar_len
+                        uom = 'barras'
+
+                    elif mtype == 'glass':
+                        if cut['size'] is None:
+                            continue
+                        qty = cut['size'] * pieces_per_line
+                        uom = 'm²'
+
+                    elif mtype == 'linear':
+                        if cut['size'] is None:
+                            continue
+                        qty = cut['size'] * pieces_per_line
+                        uom = 'm'
+
+                    elif mtype == 'hardware':
+                        qty = pieces_per_line
+                        uom = 'uds'
+
+                    else:
                         continue
-                    qty = cut['size'] * pieces_per_line
-                    uom = 'm²'
 
-                elif mtype == 'linear':
-                    if cut['size'] is None:
-                        continue
-                    qty = cut['size'] * pieces_per_line
-                    uom = 'm'
-
-                elif mtype == 'hardware':
-                    qty = pieces_per_line
-                    uom = 'uds'
-
-                else:
-                    continue
-
-                pid = product.id
-                if pid not in aggregated:
-                    aggregated[pid] = {
-                        'product': product,
-                        'qty': 0.0,
-                        'uom': uom,
-                        'name': product.display_name,
-                    }
-                aggregated[pid]['qty'] += qty
+                    pid = product.id
+                    if pid not in aggregated:
+                        aggregated[pid] = {
+                            'product': product,
+                            'qty': 0.0,
+                            'uom': uom,
+                            'name': product.display_name,
+                        }
+                    aggregated[pid]['qty'] += qty
 
         return list(aggregated.values())
 

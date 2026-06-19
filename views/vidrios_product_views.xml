@@ -124,6 +124,22 @@
 
                             </field>
                         </page>
+                        <!-- ===== MÓDULOS / COMPLEMENTOS ===== -->
+                        <page string="Módulos / Complementos" name="modules">
+                            <p class="text-muted mb-2">
+                                Otros productos cuyas piezas se suman al despiece de este.
+                                Ejemplo: añadir "Mosquitero" a "Ventana Francesa" genera
+                                automáticamente las piezas del mosquitero con las mismas
+                                medidas de la línea.
+                            </p>
+                            <field name="modulo_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="price_m2" string="Precio/m²"/>
+                                    <field name="requires_depth" string="3D"/>
+                                </list>
+                            </field>
+                        </page>
                     </notebook>
                 </sheet>
             </form>

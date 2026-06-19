@@ -167,7 +167,15 @@
                             <t t-if="cutlist">
                                 <hr class="sep"/>
                                 <div class="xs rc" style="letter-spacing:1px;">-- DESPIECE --</div>
+                                <t t-set="cut_prev_src" t-value="None"/>
                                 <t t-foreach="cutlist" t-as="cut">
+                                    <!-- Subencabezado por source solo si hay complementos -->
+                                    <t t-if="line.modulo_ids and cut.get('source') != cut_prev_src">
+                                        <div class="xs rc rb" style="margin-top:3px;">
+                                            -- <t t-esc="cut.get('source','')"/> --
+                                        </div>
+                                        <t t-set="cut_prev_src" t-value="cut.get('source')"/>
+                                    </t>
                                     <div class="row pieza">
                                         <span class="rn"><t t-esc="cut['name']"/></span>
                                         <span class="rv">
