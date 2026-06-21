@@ -91,10 +91,14 @@ class VidriosOrder(models.Model):
     material_ids = fields.One2many(
         'vidrios.order.material', 'order_id', string='Materiales estimados'
     )
+    used_material_ids = fields.One2many(
+        'vidrios.order.material.used', 'order_id', string='Materiales usados'
+    )
     consume_stock = fields.Boolean(
-        'Consumir stock al producir', default=True,
-        help='Si está activo, al pasar a Producción se descontarán los '
-             'materiales calculados del inventario.',
+        'Consumir stock al producir (inmediato)', default=False,
+        help='Si está activo, al pasar a Producción se descuenta el inventario de inmediato '
+             'usando los estimados. Si está inactivo (recomendado), el descuento ocurre '
+             'al marcar la orden como Lista, usando los materiales realmente usados.',
     )
     stock_consumed = fields.Boolean(
         'Stock consumido', default=False, copy=False, readonly=True,
@@ -168,8 +172,10 @@ class VidriosOrder(models.Model):
         for rec in self:
             if rec.state not in ('quoted', 'deposit'):
                 raise UserError(_('Debe estar cotizado o con anticipo para pasar a producción.'))
-            # Actualizar materiales y consumir stock
             rec._recompute_materials()
+            # Pre-carga "Materiales usados" desde los estimados si aún está vacío
+            rec._prefill_used_materials()
+            # Consumo inmediato al producir solo si la opción legacy está activa
             if rec.consume_stock and not rec.stock_consumed:
                 rec._generate_stock_moves()
         self.write({'state': 'production'})
@@ -178,12 +184,18 @@ class VidriosOrder(models.Model):
         for rec in self:
             if rec.state != 'production':
                 raise UserError(_('Debe estar en producción para marcarlo como listo.'))
+            # Descuenta inventario con los materiales USADOS (editados por el usuario)
+            if not rec.stock_consumed:
+                rec._generate_stock_moves_from_used()
         self.write({'state': 'ready'})
 
     def action_delivered(self):
         for rec in self:
             if rec.state != 'ready':
                 raise UserError(_('Debe estar listo para marcar como entregado.'))
+            # Robustez: descuenta si por algún flujo llegó aquí sin consumir
+            if not rec.stock_consumed:
+                rec._generate_stock_moves_from_used()
         self.write({'state': 'delivered'})
 
     def action_cancel(self):
@@ -301,8 +313,15 @@ class VidriosOrder(models.Model):
                 self.env['vidrios.order.material'].sudo().create(vals_list)
 
     def action_recompute_materials(self):
-        """Botón manual de recálculo."""
+        """Botón manual de recálculo de estimados."""
         self._recompute_materials()
+
+    def action_reload_used_from_estimated(self):
+        """Sobreescribe 'Materiales usados' con los estimados actuales."""
+        for order in self:
+            order.used_material_ids.sudo().unlink()
+            order._recompute_materials()
+            order._prefill_used_materials()
 
     # ------------------------------------------------------------------ #
     # Descuento automático de stock                                        #
@@ -382,6 +401,71 @@ class VidriosOrder(models.Model):
 
         self.sudo().write({'stock_consumed': True})
         _logger.info('Stock consumido para orden %s (%d movimientos)', self.name, len(moves))
+
+    def _prefill_used_materials(self):
+        """
+        Copia los materiales estimados a 'Materiales usados' como punto de partida editable.
+        Solo actúa si la lista está vacía (no sobreescribe ediciones del usuario).
+        """
+        self.ensure_one()
+        if self.used_material_ids:
+            return
+        vals_list = [
+            {
+                'order_id': self.id,
+                'product_id': mat.product_id.id,
+                'qty_used': mat.qty_needed,
+                'uom_name': mat.uom_name,
+            }
+            for mat in self.material_ids
+            if mat.qty_needed > 0
+        ]
+        if vals_list:
+            self.env['vidrios.order.material.used'].sudo().create(vals_list)
+
+    def _generate_stock_moves_from_used(self):
+        """
+        Crea stock.move por cada material de la lista USADA (editable) y los marca como hechos.
+        Fuente: almacén interno.  Destino: ubicación virtual de Producción.
+        """
+        self.ensure_one()
+        if not self.used_material_ids:
+            self.stock_consumed = True
+            return
+
+        location_src, location_dest = self._get_stock_locations()
+
+        move_vals_list = []
+        for mat in self.used_material_ids:
+            qty = round(mat.qty_used, 4)
+            if qty <= 0:
+                continue
+            move_vals_list.append({
+                'description_picking_manual': 'Consumo %s — %s' % (self.name, mat.product_id.display_name),
+                'product_id': mat.product_id.id,
+                'product_uom_qty': qty,
+                'product_uom': mat.product_id.uom_id.id,
+                'location_id': location_src.id,
+                'location_dest_id': location_dest.id,
+                'origin': self.name,
+                'company_id': self.company_id.id,
+                'vidrios_order_id': self.id,
+            })
+
+        if not move_vals_list:
+            self.stock_consumed = True
+            return
+
+        moves = self.env['stock.move'].sudo().create(move_vals_list)
+        moves.sudo()._action_confirm()
+        moves.sudo()._action_assign()
+        for move in moves.sudo():
+            move.quantity = move.product_uom_qty
+            move.picked = True
+        moves.sudo()._action_done()
+
+        self.sudo().write({'stock_consumed': True})
+        _logger.info('Stock consumido (usados) para orden %s (%d movimientos)', self.name, len(moves))
 
     def _revert_stock_moves(self):
         """
@@ -503,8 +587,8 @@ class VidriosOrder(models.Model):
 
     def get_display_phone(self):
         self.ensure_one()
-        if self.partner_id:
-            return self.partner_id.phone or self.partner_id.mobile or ''
+        if self.partner_id and self.partner_id.phone:
+            return self.partner_id.phone
         return self.quick_phone or ''
 
     def get_state_label(self):

@@ -260,6 +260,20 @@
                                                t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
                                         </td>
                                     </tr>
+                                    <!-- Sub-filas por complemento -->
+                                    <t t-foreach="line.get_modulo_prices()" t-as="mp">
+                                        <tr>
+                                            <td style="padding-left:14px;font-size:8pt;color:#555;">
+                                                + <t t-esc="mp[0].name"/>
+                                            </td>
+                                            <td></td>
+                                            <td class="num" style="font-size:8pt;color:#555;">
+                                                <t t-esc="mp[1]"
+                                                   t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    </t>
                                 </t>
 
                                 <!-- Extras -->
@@ -315,13 +329,17 @@
                                            t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
                                     </td>
                                 </tr>
-                                <tr>
-                                    <td class="lbl">Anticipo pagado</td>
-                                    <td class="amt">
-                                        <t t-esc="order.amount_paid"
-                                           t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
-                                    </td>
-                                </tr>
+                                <t t-foreach="order.payment_ids.filtered(lambda p: p.state in ('in_process','paid'))" t-as="pmt">
+                                    <tr>
+                                        <td class="lbl">
+                                            Anticipo (<t t-esc="pmt.journal_id.name or 'Efectivo'"/>)
+                                        </td>
+                                        <td class="amt">
+                                            <t t-esc="pmt.amount"
+                                               t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                        </td>
+                                    </tr>
+                                </t>
                                 <tr class="saldo">
                                     <td class="lbl">Saldo pendiente</td>
                                     <td class="amt">

@@ -41,11 +41,15 @@
                     </group>
                     <group>
                         <field name="price_unit" string="Precio unitario"/>
+                        <field name="price_modules" string="Complementos" readonly="1"
+                               invisible="not modulo_ids"/>
                         <field name="price_subtotal" string="Subtotal" readonly="1"/>
                     </group>
                 </group>
                 <group groups="vidrios_castillo_taller.group_vidrios_caja">
                     <field name="price_unit" string="Precio unitario" readonly="1"/>
+                    <field name="price_modules" string="Complementos" readonly="1"
+                           invisible="not modulo_ids"/>
                     <field name="price_subtotal" string="Subtotal" readonly="1"/>
                 </group>
 
@@ -291,6 +295,9 @@
                                         </group>
                                         <group>
                                             <field name="price_unit" string="Precio unitario"/>
+                                            <field name="price_modules" string="Complementos"
+                                                   readonly="1"
+                                                   invisible="not modulo_ids"/>
                                             <field name="price_subtotal" string="Subtotal"
                                                    readonly="1"/>
                                         </group>
@@ -405,16 +412,18 @@
                                 <list>
                                     <field name="date" string="Fecha"/>
                                     <field name="memo" string="Referencia"/>
-                                    <field name="journal_id" string="Caja"/>
+                                    <field name="journal_id" string="Método"/>
                                     <field name="amount" string="Monto"/>
                                     <field name="state" string="Estado" widget="badge"/>
                                 </list>
                             </field>
                         </page>
 
-                        <!-- ===== MATERIALES ESTIMADOS ===== -->
-                        <page string="Materiales estimados" name="materials"
+                        <!-- ===== MATERIALES ===== -->
+                        <page string="Materiales" name="materials"
                               groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_taller">
+
+                            <!-- Controles de stock -->
                             <group>
                                 <group>
                                     <field name="consume_stock"
@@ -424,10 +433,44 @@
                                            groups="vidrios_castillo_taller.group_vidrios_admin"/>
                                 </group>
                             </group>
+
+                            <!-- Materiales USADOS (editable en producción) -->
+                            <separator string="Materiales usados"
+                                       invisible="state not in ('production','ready','delivered')"/>
+                            <field name="used_material_ids"
+                                   invisible="state not in ('production','ready','delivered')"
+                                   readonly="state != 'production'"
+                                   nolabel="1">
+                                <list editable="bottom">
+                                    <field name="product_id" string="Material"
+                                           options="{'no_create': False}"/>
+                                    <field name="qty_used" string="Cantidad usada"
+                                           digits="[10,4]"/>
+                                    <field name="uom_name" string="Unidad"/>
+                                    <field name="notes" string="Nota" optional="hide"/>
+                                </list>
+                            </field>
+                            <p class="text-muted"
+                               invisible="used_material_ids or state not in ('production','ready','delivered')">
+                                Sin materiales registrados. Agrega filas manualmente o recarga los estimados.
+                            </p>
+
+                            <!-- Botón recargar desde estimados (solo en producción) -->
+                            <div invisible="state != 'production'">
+                                <button name="action_reload_used_from_estimated"
+                                        string="↻ Recargar desde estimados"
+                                        type="object"
+                                        class="btn-secondary btn-sm"
+                                        title="Sobreescribe la lista usada con los materiales estimados actuales"
+                                        groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_taller"/>
+                            </div>
+
+                            <!-- Materiales ESTIMADOS (solo lectura, referencia) -->
+                            <separator string="Materiales estimados (referencia)"/>
                             <field name="material_ids" readonly="1" nolabel="1">
                                 <list>
                                     <field name="product_id" string="Material"/>
-                                    <field name="qty_needed" string="Necesario"
+                                    <field name="qty_needed" string="Estimado"
                                            digits="[10,4]"/>
                                     <field name="uom_name" string="Unidad"/>
                                     <field name="qty_available" string="Disponible"

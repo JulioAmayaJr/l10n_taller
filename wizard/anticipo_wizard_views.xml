@@ -9,8 +9,11 @@
                 <group>
                     <group string="Datos del anticipo">
                         <field name="order_id" readonly="1"/>
+                        <field name="company_id" invisible="1"/>
                         <field name="amount"/>
-                        <field name="journal_id"/>
+                        <field name="journal_id"
+                               domain="[('type','in',('cash','bank')),('company_id','=',company_id)]"
+                               options="{'no_create': True}"/>
                         <field name="payment_date"/>
                         <field name="memo"/>
                     </group>

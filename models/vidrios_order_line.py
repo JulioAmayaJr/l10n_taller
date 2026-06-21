@@ -31,6 +31,10 @@ class VidriosOrderLine(models.Model):
         'Precio unitario', compute='_compute_price_unit', store=True, readonly=False,
         currency_field='currency_id'
     )
+    price_modules = fields.Monetary(
+        'Precio complementos', compute='_compute_price_modules', store=True,
+        currency_field='currency_id'
+    )
     price_subtotal = fields.Monetary(
         'Subtotal', compute='_compute_subtotal', store=True,
         currency_field='currency_id'
@@ -86,35 +90,59 @@ class VidriosOrderLine(models.Model):
         for line in self:
             line.area = (line.width / 100.0) * (line.height / 100.0)
 
-    @api.depends('area', 'product_id.price_m2', 'product_id.min_price', 'price_manual')
+    @api.depends(
+        'area', 'price_manual',
+        'product_id.use_fixed_price', 'product_id.fixed_price',
+        'product_id.price_m2', 'product_id.min_price',
+        'product_id.price_tier_ids.min_area',
+        'product_id.price_tier_ids.price_mode',
+        'product_id.price_tier_ids.amount',
+    )
     def _compute_price_unit(self):
         for line in self:
             if line.price_manual:
                 continue  # precio fijado manualmente: conserva el valor almacenado
             if line.product_id:
-                base = line.area * line.product_id.price_m2
-                line.price_unit = max(base, line.product_id.min_price)
+                line.price_unit = line.product_id.get_price_for_area(line.area)
             else:
                 line.price_unit = 0.0
 
-    @api.depends('price_unit', 'quantity')
+    @api.depends(
+        'modulo_ids', 'area',
+        'modulo_ids.use_fixed_price', 'modulo_ids.fixed_price',
+        'modulo_ids.price_m2', 'modulo_ids.min_price',
+        'modulo_ids.price_tier_ids.min_area',
+        'modulo_ids.price_tier_ids.price_mode',
+        'modulo_ids.price_tier_ids.amount',
+    )
+    def _compute_price_modules(self):
+        for line in self:
+            line.price_modules = sum(
+                m.get_price_for_area(line.area) for m in line.modulo_ids
+            )
+
+    @api.depends('price_unit', 'price_modules', 'quantity')
     def _compute_subtotal(self):
         for line in self:
-            line.price_subtotal = (line.price_unit or 0.0) * line.quantity
+            line.price_subtotal = ((line.price_unit or 0.0) + (line.price_modules or 0.0)) * line.quantity
 
     def _formula_price(self):
         """Precio que devolvería la fórmula (sin override manual)."""
         self.ensure_one()
         if not self.product_id:
             return 0.0
-        base = self.area * self.product_id.price_m2
-        return max(base, self.product_id.min_price)
+        return self.product_id.get_price_for_area(self.area)
 
     @api.onchange('price_unit')
     def _onchange_price_unit(self):
         """Marca price_manual=True solo cuando el usuario cambia el precio respecto a la fórmula."""
         if self.price_unit != self._formula_price():
             self.price_manual = True
+
+    def get_modulo_prices(self):
+        """Para reportes: devuelve lista de (modulo, precio_unitario) de los complementos activos."""
+        self.ensure_one()
+        return [(m, m.get_price_for_area(self.area)) for m in self.modulo_ids]
 
     def action_reset_price(self):
         """Restaura el precio de fórmula: borra el override manual y recalcula."""

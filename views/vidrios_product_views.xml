@@ -26,11 +26,16 @@
                         <h1><field name="name" placeholder="Nombre del producto..."/></h1>
                     </div>
                     <group>
-                        <group>
-                            <field name="price_m2" string="Precio por m²"/>
-                            <field name="min_price" string="Precio mínimo"/>
+                        <group string="Precio">
+                            <field name="use_fixed_price" widget="boolean_toggle" string="Precio fijo"/>
+                            <field name="fixed_price" string="Precio fijo ($)"
+                                   invisible="not use_fixed_price"/>
+                            <field name="price_m2" string="Precio por m²"
+                                   invisible="use_fixed_price"/>
+                            <field name="min_price" string="Precio mínimo"
+                                   invisible="use_fixed_price"/>
                         </group>
-                        <group>
+                        <group string="Opciones">
                             <field name="active"/>
                             <field name="requires_depth"/>
                         </group>
@@ -124,6 +129,22 @@
 
                             </field>
                         </page>
+                        <!-- ===== PRECIOS POR RANGO ===== -->
+                        <page string="Precios por rango" name="price_tiers">
+                            <p class="text-muted mb-2">
+                                Opcional. Si se definen rangos, <b>reemplazan</b> el Precio por m²
+                                y el Precio mínimo. El sistema aplica el último rango cuyo
+                                "Desde m²" sea ≤ al área de la línea (semántica de landing, no marginal).
+                            </p>
+                            <field name="price_tier_ids">
+                                <list editable="bottom">
+                                    <field name="min_area" string="Desde m²"/>
+                                    <field name="price_mode" string="Modo"/>
+                                    <field name="amount" string="Precio"/>
+                                </list>
+                            </field>
+                        </page>
+
                         <!-- ===== MÓDULOS / COMPLEMENTOS ===== -->
                         <page string="Módulos / Complementos" name="modules">
                             <p class="text-muted mb-2">

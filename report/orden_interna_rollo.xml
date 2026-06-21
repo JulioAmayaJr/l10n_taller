@@ -225,13 +225,15 @@
                                    t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
                             </span>
                         </div>
-                        <div class="row">
-                            <span class="rn">Anticipo</span>
-                            <span class="rv">
-                                <t t-esc="order.amount_paid"
-                                   t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
-                            </span>
-                        </div>
+                        <t t-foreach="order.payment_ids.filtered(lambda p: p.state in ('in_process','paid'))" t-as="pmt">
+                            <div class="row">
+                                <span class="rn">Anticipo (<t t-esc="pmt.journal_id.name or 'Efectivo'"/>)</span>
+                                <span class="rv">
+                                    <t t-esc="pmt.amount"
+                                       t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                </span>
+                            </div>
+                        </t>
                         <div class="tot" style="font-size:13px;border-top:1px solid #000;padding-top:2px;">
                             <span>SALDO</span>
                             <span>
@@ -349,6 +351,16 @@
                             <t t-if="line.notes">
                                 <div class="xs it" style="margin-left:4px;"><t t-esc="line.notes"/></div>
                             </t>
+                            <!-- Sub-líneas de complementos con su precio -->
+                            <t t-foreach="line.get_modulo_prices()" t-as="mp">
+                                <div class="row xs" style="margin-left:8px;">
+                                    <span class="rn">+ <t t-esc="mp[0].name"/></span>
+                                    <span class="rv">
+                                        <t t-esc="mp[1]"
+                                           t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                    </span>
+                                </div>
+                            </t>
                             <div class="row" style="margin-top:2px;">
                                 <span></span>
                                 <span class="rv">
@@ -395,13 +407,15 @@
                                    t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
                             </span>
                         </div>
-                        <div class="row">
-                            <span class="rn">Anticipo</span>
-                            <span class="rv">
-                                <t t-esc="order.amount_paid"
-                                   t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
-                            </span>
-                        </div>
+                        <t t-foreach="order.payment_ids.filtered(lambda p: p.state in ('in_process','paid'))" t-as="pmt">
+                            <div class="row">
+                                <span class="rn">Anticipo (<t t-esc="pmt.journal_id.name or 'Efectivo'"/>)</span>
+                                <span class="rv">
+                                    <t t-esc="pmt.amount"
+                                       t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
+                                </span>
+                            </div>
+                        </t>
                         <div class="tot" style="font-size:13px;border-top:1px solid #000;padding-top:2px;">
                             <span>SALDO</span>
                             <span>

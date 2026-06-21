@@ -1,5 +1,6 @@
 from . import product_ext
 from . import stock_ext
+from . import vidrios_price_tier
 from . import vidrios_product
 from . import vidrios_characteristic
 from . import vidrios_characteristic_option
@@ -8,5 +9,6 @@ from . import vidrios_extra
 from . import vidrios_order_line_characteristic
 from . import vidrios_order_line
 from . import vidrios_order_material
+from . import vidrios_order_material_used
 from . import vidrios_order
 from . import account_payment_ext
