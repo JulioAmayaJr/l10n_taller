@@ -20,7 +20,6 @@
         'data/sequences.xml',
         'data/demo_data.xml',
         'data/init_options.xml',
-        'data/seed_action.xml',
         'wizard/anticipo_wizard_views.xml',
         'views/vidrios_product_views.xml',
         'views/vidrios_order_views.xml',

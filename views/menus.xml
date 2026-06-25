@@ -48,13 +48,6 @@
               action="action_vidrios_product"
               sequence="10"/>
 
-    <menuitem id="menu_vidrios_seed_data"
-              name="Cargar datos de prueba"
-              parent="menu_vidrios_productos"
-              action="vidrios_castillo_taller.action_seed_data"
-              sequence="90"
-              groups="vidrios_castillo_taller.group_vidrios_admin"/>
-
     <!-- Nivel 1: Anticipos -->
     <menuitem id="menu_vidrios_anticipos"
               name="Anticipos"
