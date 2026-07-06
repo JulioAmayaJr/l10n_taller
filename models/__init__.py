@@ -1,5 +1,7 @@
 from . import product_ext
 from . import stock_ext
+from . import pos_order_ext
+from . import company_ext
 from . import vidrios_price_tier
 from . import vidrios_product
 from . import vidrios_characteristic

@@ -61,4 +61,11 @@
               action="action_vidrios_anticipos"
               sequence="10"/>
 
+    <menuitem id="menu_vidrios_pagos_pos"
+              name="Pagos en POS"
+              parent="menu_vidrios_anticipos"
+              action="action_vidrios_pagos_pos"
+              sequence="20"
+              groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_caja"/>
+
 </odoo>

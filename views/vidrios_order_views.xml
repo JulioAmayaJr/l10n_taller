@@ -408,7 +408,23 @@
 
                         <page string="Anticipos / Pagos" name="payments"
                               groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_vendedor,vidrios_castillo_taller.group_vidrios_caja">
-                            <field name="payment_ids" readonly="1">
+
+                            <separator string="Pagos POS"/>
+                            <field name="pos_order_ids" readonly="1" nolabel="1">
+                                <list string="Pagos POS">
+                                    <field name="date_order" string="Fecha"/>
+                                    <field name="pos_reference" string="Referencia"/>
+                                    <field name="amount_total" string="Monto"/>
+                                    <field name="state" string="Estado" widget="badge"
+                                           decoration-success="state in ('paid','done','invoiced')"
+                                           decoration-warning="state == 'draft'"
+                                           decoration-danger="state == 'cancel'"/>
+                                </list>
+                            </field>
+
+                            <separator string="Anticipos (legado)" invisible="not payment_ids"/>
+                            <field name="payment_ids" readonly="1" nolabel="1"
+                                   invisible="not payment_ids">
                                 <list>
                                     <field name="date" string="Fecha"/>
                                     <field name="memo" string="Referencia"/>
@@ -572,6 +588,13 @@
         <field name="res_model">account.payment</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[('vidrios_order_id','!=',False),('payment_type','=','inbound')]</field>
+    </record>
+
+    <record id="action_vidrios_pagos_pos" model="ir.actions.act_window">
+        <field name="name">Pagos POS de Taller</field>
+        <field name="res_model">pos.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('vidrios_order_id','!=',False)]</field>
     </record>
 
 </odoo>

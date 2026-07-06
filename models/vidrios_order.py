@@ -69,6 +69,9 @@ class VidriosOrder(models.Model):
     payment_ids = fields.One2many(
         'account.payment', 'vidrios_order_id', string='Anticipos'
     )
+    pos_order_ids = fields.One2many(
+        'pos.order', 'vidrios_order_id', string='Pedidos POS'
+    )
 
     delivery_date = fields.Date('Fecha de entrega prometida')
     notes = fields.Text('Observaciones')
@@ -140,6 +143,8 @@ class VidriosOrder(models.Model):
         'tax_rate',
         'payment_ids.amount',
         'payment_ids.state',
+        'pos_order_ids.state',
+        'pos_order_ids.payment_ids.amount',
     )
     def _compute_amounts(self):
         for order in self:
@@ -152,6 +157,9 @@ class VidriosOrder(models.Model):
                 p.amount for p in order.payment_ids
                 if p.state in ('in_process', 'paid')
             )
+            for pos_ord in order.pos_order_ids.sudo():
+                if pos_ord.state in ('paid', 'done', 'invoiced'):
+                    paid += sum(pos_ord.payment_ids.mapped('amount'))
             order.amount_untaxed = subtotal
             order.amount_tax = tax
             order.amount_total = total

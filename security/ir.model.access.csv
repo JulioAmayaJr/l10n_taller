@@ -55,3 +55,21 @@ access_vidrios_order_material_used_admin,vidrios.order.material.used admin,model
 access_vidrios_order_material_used_vendedor,vidrios.order.material.used vendedor,model_vidrios_order_material_used,vidrios_castillo_taller.group_vidrios_vendedor,1,1,1,1
 access_vidrios_order_material_used_taller,vidrios.order.material.used taller,model_vidrios_order_material_used,vidrios_castillo_taller.group_vidrios_taller,1,1,1,1
 access_vidrios_order_material_used_caja,vidrios.order.material.used caja,model_vidrios_order_material_used,vidrios_castillo_taller.group_vidrios_caja,1,0,0,0
+
+access_pos_order_vidrios_admin,pos.order vidrios admin,model_pos_order,vidrios_castillo_taller.group_vidrios_admin,1,0,0,0
+access_pos_order_vidrios_vendedor,pos.order vidrios vendedor,model_pos_order,vidrios_castillo_taller.group_vidrios_vendedor,1,0,0,0
+access_pos_order_vidrios_caja,pos.order vidrios caja,model_pos_order,vidrios_castillo_taller.group_vidrios_caja,1,0,0,0
+
+access_pos_payment_vidrios_admin,pos.payment vidrios admin,model_pos_payment,vidrios_castillo_taller.group_vidrios_admin,1,0,0,0
+access_pos_payment_vidrios_caja,pos.payment vidrios caja,model_pos_payment,vidrios_castillo_taller.group_vidrios_caja,1,0,0,0
+
+access_pos_payment_method_vidrios_admin,pos.payment.method vidrios admin,model_pos_payment_method,vidrios_castillo_taller.group_vidrios_admin,1,0,0,0
+access_pos_payment_method_vidrios_vendedor,pos.payment.method vidrios vendedor,model_pos_payment_method,vidrios_castillo_taller.group_vidrios_vendedor,1,0,0,0
+access_pos_payment_method_vidrios_caja,pos.payment.method vidrios caja,model_pos_payment_method,vidrios_castillo_taller.group_vidrios_caja,1,0,0,0
+
+access_pos_session_vidrios_admin,pos.session vidrios admin,model_pos_session,vidrios_castillo_taller.group_vidrios_admin,1,0,0,0
+access_pos_session_vidrios_vendedor,pos.session vidrios vendedor,model_pos_session,vidrios_castillo_taller.group_vidrios_vendedor,1,0,0,0
+access_pos_session_vidrios_caja,pos.session vidrios caja,model_pos_session,vidrios_castillo_taller.group_vidrios_caja,1,0,0,0
+
+access_pos_config_vidrios_admin,pos.config vidrios admin,model_pos_config,vidrios_castillo_taller.group_vidrios_admin,1,0,0,0
+access_pos_config_vidrios_caja,pos.config vidrios caja,model_pos_config,vidrios_castillo_taller.group_vidrios_caja,1,0,0,0

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_company_form_vidrios_ext" model="ir.ui.view">
+        <field name="name">res.company.form.vidrios.ext</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[last()]" position="after">
+                <page string="Taller Vidrios" name="vidrios_taller">
+                    <group string="Punto de Venta">
+                        <field name="vidrios_pos_config_id"
+                               options="{'no_create': True}"/>
+                        <field name="vidrios_pos_product_id"
+                               domain="[('available_in_pos', '=', True)]"
+                               options="{'no_create': False}"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

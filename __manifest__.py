@@ -12,7 +12,7 @@
     'license': 'LGPL-3',
     'application': True,
     'installable': True,
-    'depends': ['base', 'mail', 'account', 'stock'],
+    'depends': ['base', 'mail', 'account', 'stock', 'point_of_sale'],
     'post_init_hook': 'post_init_hook',
     'data': [
         'security/security.xml',
@@ -21,6 +21,7 @@
         'data/demo_data.xml',
         'data/init_options.xml',
         'wizard/anticipo_wizard_views.xml',
+        'views/vidrios_company_views.xml',
         'views/vidrios_product_views.xml',
         'views/vidrios_order_views.xml',
         'views/vidrios_report_views.xml',
