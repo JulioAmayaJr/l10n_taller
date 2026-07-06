@@ -109,7 +109,7 @@
                 <t t-foreach="docs" t-as="order">
                     <div class="rollo">
 
-                        <div class="rc rbi"><t t-esc="order.company_id.name or 'Vidrios Castillo'"/></div>
+                        <div class="rc rbi"><t t-esc="order._get_report_company().name or 'Vidrios Castillo'"/></div>
                         <div class="rc rb">ORDEN INTERNA TALLER</div>
                         <div class="rc rbi"><t t-esc="order.name"/></div>
                         <hr class="sep2"/>
@@ -301,7 +301,7 @@
                 <t t-foreach="docs" t-as="order">
                     <div class="rollo">
 
-                        <div class="rc rbi"><t t-esc="order.company_id.name or 'Vidrios Castillo'"/></div>
+                        <div class="rc rbi"><t t-esc="order._get_report_company().name or 'Vidrios Castillo'"/></div>
                         <div class="rc">COMPROBANTE DE PEDIDO</div>
                         <div class="rc rbi"><t t-esc="order.name"/></div>
                         <hr class="sep2"/>

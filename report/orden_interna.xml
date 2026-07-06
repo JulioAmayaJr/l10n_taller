@@ -248,12 +248,12 @@
                         <div class="asm-docheader">
                             <!-- Izquierda: logo + referencia de orden -->
                             <div class="asm-dh-left">
-                                <t t-if="order.company_id.logo">
-                                    <img t-att-src="image_data_uri(order.company_id.logo)"/>
+                                <t t-if="order._get_report_company().logo">
+                                    <img t-att-src="image_data_uri(order._get_report_company().logo)"/>
                                 </t>
                                 <t t-else="">
                                     <div class="asm-bold" style="font-size:11pt;">
-                                        <t t-esc="order.company_id.name"/>
+                                        <t t-esc="order._get_report_company().name"/>
                                     </div>
                                 </t>
                                 <div class="asm-order-ref">

@@ -172,6 +172,10 @@ class VidriosOrder(models.Model):
             lambda p: p.state in ('in_process', 'paid')
         )
 
+    def _get_report_company(self):
+        self.ensure_one()
+        return self.sudo().company_id
+
     # ------------------------------------------------------------------ #
     # Flujo de estados                                                     #
     # ------------------------------------------------------------------ #

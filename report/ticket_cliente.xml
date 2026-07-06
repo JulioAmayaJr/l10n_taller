@@ -154,12 +154,12 @@
                         <div class="tk-docheader">
                             <!-- Izquierda: logo + referencia -->
                             <div class="tk-dh-left">
-                                <t t-if="order.company_id.logo">
-                                    <img t-att-src="image_data_uri(order.company_id.logo)"/>
+                                <t t-if="order._get_report_company().logo">
+                                    <img t-att-src="image_data_uri(order._get_report_company().logo)"/>
                                 </t>
                                 <t t-else="">
                                     <div style="font-size:11pt;font-weight:bold;">
-                                        <t t-esc="order.company_id.name"/>
+                                        <t t-esc="order._get_report_company().name"/>
                                     </div>
                                 </t>
                                 <div class="tk-order-ref">
@@ -174,7 +174,7 @@
                             <div class="tk-dh-center">
                                 <h2><i>Comprobante de Pedido</i></h2>
                                 <div class="tk-subtitle">
-                                    <t t-esc="order.company_id.name"/>
+                                    <t t-esc="order._get_report_company().name"/>
                                 </div>
                             </div>
 
