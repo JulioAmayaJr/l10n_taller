@@ -18,7 +18,6 @@
         'security/security.xml',
         'security/ir.model.access.csv',
         'data/sequences.xml',
-        'data/demo_data.xml',
         'data/init_options.xml',
         'wizard/anticipo_wizard_views.xml',
         'views/vidrios_company_views.xml',
@@ -30,5 +29,9 @@
         'report/orden_interna_rollo.xml',
         'views/menus.xml',
     ],
+    'demo': [
+        'data/demo_data.xml',
+    ],
     'images': ['static/description/icon.png'],
+
 }
