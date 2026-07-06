@@ -225,7 +225,7 @@
                                    t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
                             </span>
                         </div>
-                        <t t-foreach="order.payment_ids.filtered(lambda p: p.state in ('in_process','paid'))" t-as="pmt">
+                        <t t-foreach="order._get_report_payments()" t-as="pmt">
                             <div class="row">
                                 <span class="rn">Anticipo (<t t-esc="pmt.journal_id.name or 'Efectivo'"/>)</span>
                                 <span class="rv">
@@ -407,7 +407,7 @@
                                    t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
                             </span>
                         </div>
-                        <t t-foreach="order.payment_ids.filtered(lambda p: p.state in ('in_process','paid'))" t-as="pmt">
+                        <t t-foreach="order._get_report_payments()" t-as="pmt">
                             <div class="row">
                                 <span class="rn">Anticipo (<t t-esc="pmt.journal_id.name or 'Efectivo'"/>)</span>
                                 <span class="rv">

@@ -329,7 +329,7 @@
                                            t-options='{"widget":"monetary","display_currency":order.currency_id}'/>
                                     </td>
                                 </tr>
-                                <t t-foreach="order.payment_ids.filtered(lambda p: p.state in ('in_process','paid'))" t-as="pmt">
+                                <t t-foreach="order._get_report_payments()" t-as="pmt">
                                     <tr>
                                         <td class="lbl">
                                             Anticipo (<t t-esc="pmt.journal_id.name or 'Efectivo'"/>)

@@ -154,7 +154,7 @@ class VidriosOrder(models.Model):
             tax = subtotal * (order.tax_rate / 100.0) if order.apply_tax else 0.0
             total = subtotal + tax
             paid = sum(
-                p.amount for p in order.payment_ids
+                p.amount for p in order.sudo().payment_ids
                 if p.state in ('in_process', 'paid')
             )
             for pos_ord in order.pos_order_ids.sudo():
@@ -165,6 +165,12 @@ class VidriosOrder(models.Model):
             order.amount_total = total
             order.amount_paid = paid
             order.amount_due = total - paid
+
+    def _get_report_payments(self):
+        self.ensure_one()
+        return self.sudo().payment_ids.filtered(
+            lambda p: p.state in ('in_process', 'paid')
+        )
 
     # ------------------------------------------------------------------ #
     # Flujo de estados                                                     #
