@@ -164,7 +164,7 @@
                             invisible="state != 'draft'"/>
                     <button name="action_register_deposit" string="Registrar Anticipo"
                             type="object" class="btn-primary"
-                            invisible="state not in ('quoted','deposit')"/>
+                            invisible="state == 'cancel' or amount_due &lt;= 0"/>
                     <button name="action_to_production" string="A Producción"
                             type="object" class="btn-primary"
                             invisible="state not in ('quoted','deposit')"/>
