@@ -46,10 +46,7 @@ class VidriosAnticipoWizard(models.TransientModel):
     def _compute_pos_session(self):
         for wizard in self:
             company = wizard.order_id.company_id or self.env.company
-            session = self.env['pos.session'].sudo().search(
-                [('state', '=', 'opened'), ('company_id', '=', company.id)],
-                limit=1,
-            )
+            session = wizard._find_pos_session(company)
             wizard.available_payment_method_ids = (
                 session.config_id.payment_method_ids
                 if session
@@ -61,16 +58,33 @@ class VidriosAnticipoWizard(models.TransientModel):
         if self.order_id:
             self.amount = self.order_id.amount_due
             company = self.order_id.company_id or self.env.company
-            session = self.env['pos.session'].sudo().search(
-                [('state', '=', 'opened'), ('company_id', '=', company.id)],
-                limit=1,
-            )
+            session = self._find_pos_session(company)
             if session:
                 self.payment_method_id = session.config_id.payment_method_ids[:1]
                 self.available_payment_method_ids = session.config_id.payment_method_ids
             else:
                 self.payment_method_id = False
                 self.available_payment_method_ids = self.env['pos.payment.method']
+
+    def _find_pos_session(self, company):
+        domain = [('state', '=', 'opened'), ('company_id', '=', company.id)]
+        if company.vidrios_pos_config_id:
+            domain.append(('config_id', '=', company.vidrios_pos_config_id.id))
+        return self.env['pos.session'].sudo().search(domain, limit=1)
+
+    def _get_payment_product(self):
+        company = self.order_id.company_id or self.env.company
+        product = company.vidrios_pos_product_id
+        if product:
+            return product
+        tmpl = self.env.ref(
+            'vidrios_castillo_taller.product_pago_taller', raise_if_not_found=False
+        )
+        if tmpl:
+            product = tmpl.product_variant_id
+            company.sudo().write({'vidrios_pos_product_id': product.id})
+            return product
+        raise UserError(_('No se encontró el producto de pago del taller. Actualiza el módulo.'))
 
     def _get_pos_line_name(self, order):
         unique_products = order.line_ids.mapped('product_id')
@@ -103,23 +117,19 @@ class VidriosAnticipoWizard(models.TransientModel):
         if self.amount <= 0:
             raise UserError(_('El monto del anticipo debe ser mayor a cero.'))
 
-        pos_session = self.env['pos.session'].sudo().search(
-            [('state', '=', 'opened'), ('company_id', '=', company.id)],
-            limit=1,
-        )
+        pos_session = self._find_pos_session(company)
         if not pos_session:
+            if company.vidrios_pos_config_id:
+                raise UserError(_(
+                    'No hay sesión abierta en el POS "%s". '
+                    'Abre una sesión antes de registrar el anticipo.'
+                ) % company.vidrios_pos_config_id.name)
             raise UserError(_(
                 'No hay sesión POS abierta para la empresa "%s". '
                 'Abre una sesión en el Punto de Venta antes de registrar el pago.'
             ) % company.name)
 
-        pos_product = company.vidrios_pos_product_id
-        if not pos_product:
-            raise UserError(_(
-                'No hay producto de pago configurado para la empresa "%s". '
-                'Ve a Configuración → Empresa y configura el '
-                '"Producto de pago taller (POS)".'
-            ) % company.name)
+        pos_product = self._get_payment_product()
 
         if self.payment_method_id not in pos_session.config_id.payment_method_ids:
             raise UserError(_(

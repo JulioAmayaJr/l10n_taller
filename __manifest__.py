@@ -18,6 +18,7 @@
         'security/security.xml',
         'security/ir.model.access.csv',
         'data/sequences.xml',
+        'data/product_data.xml',
         'data/init_options.xml',
         'wizard/anticipo_wizard_views.xml',
         'views/vidrios_company_views.xml',
