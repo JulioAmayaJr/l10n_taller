@@ -154,7 +154,6 @@ class VidriosAnticipoWizard(models.TransientModel):
             'currency_id': pos_session.currency_id.id,
             'vidrios_order_id': order.id,
             'pos_reference': _('Taller/%s') % order.name,
-            'note': order.name,
             'amount_total': amount,
             'amount_tax': 0.0,
             'amount_paid': amount,
