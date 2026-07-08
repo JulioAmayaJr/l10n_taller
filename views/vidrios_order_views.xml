@@ -201,6 +201,10 @@
                            statusbar_visible="draft,quoted,deposit,production,ready,delivered"/>
                 </header>
                 <sheet>
+                    <widget name="web_ribbon" title="Con Anticipo" bg_color="text-bg-info"
+                            invisible="amount_paid &lt;= 0 or amount_due &lt;= 0"/>
+                    <widget name="web_ribbon" title="Pagado" bg_color="text-bg-success"
+                            invisible="amount_due &gt; 0 or amount_total &lt;= 0"/>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
