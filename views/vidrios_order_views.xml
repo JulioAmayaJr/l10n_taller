@@ -510,18 +510,61 @@
                         </page>
                     </notebook>
 
-                    <group class="oe_subtotal_footer oe_right"
-                           groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_vendedor,vidrios_castillo_taller.group_vidrios_caja">
-                        <field name="apply_tax"/>
-                        <field name="tax_rate" invisible="not apply_tax"/>
-                        <field name="amount_untaxed" readonly="1"/>
-                        <field name="amount_tax" readonly="1" invisible="not apply_tax"/>
-                        <div class="oe_subtotal_footer_separator">
-                            <field name="amount_total" readonly="1" class="oe_subtotal_footer_separator"/>
-                        </div>
-                        <field name="amount_paid" readonly="1"/>
-                        <field name="amount_due" readonly="1" class="text-danger"/>
-                    </group>
+                    <div class="oe_right"
+                         groups="vidrios_castillo_taller.group_vidrios_admin,vidrios_castillo_taller.group_vidrios_vendedor,vidrios_castillo_taller.group_vidrios_caja">
+                        <table class="table table-sm table-borderless mb-0" style="min-width:280px;">
+                            <tbody>
+                                <tr>
+                                    <td class="text-end text-muted py-1 pe-3">Aplicar IVA</td>
+                                    <td class="text-end py-1">
+                                        <field name="apply_tax" nolabel="1"/>
+                                    </td>
+                                </tr>
+                                <tr invisible="not apply_tax">
+                                    <td class="text-end text-muted py-1 pe-3">Tasa IVA (%)</td>
+                                    <td class="text-end py-1">
+                                        <field name="tax_rate" nolabel="1"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end text-muted py-1 pe-3">Subtotal</td>
+                                    <td class="text-end py-1">
+                                        <field name="amount_untaxed" nolabel="1" readonly="1"/>
+                                    </td>
+                                </tr>
+                                <tr invisible="not apply_tax">
+                                    <td class="text-end text-muted py-1 pe-3">IVA</td>
+                                    <td class="text-end py-1">
+                                        <field name="amount_tax" nolabel="1" readonly="1"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end fw-bold py-2 pe-3 border-top border-2"
+                                        style="font-size:1.1em;">Total</td>
+                                    <td class="text-end fw-bold py-2 border-top border-2"
+                                        style="font-size:1.1em;">
+                                        <field name="amount_total" nolabel="1" readonly="1"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end text-muted py-1 pe-3 border-top">Anticipo pagado</td>
+                                    <td class="text-end py-1 border-top">
+                                        <field name="amount_paid" nolabel="1" readonly="1"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end text-muted py-1 pe-3">Saldo pendiente</td>
+                                    <td class="text-end py-1">
+                                        <field name="amount_due" nolabel="1" readonly="1"
+                                               class="text-danger fw-semibold"
+                                               invisible="amount_due &lt;= 0"/>
+                                        <field name="amount_due" nolabel="1" readonly="1"
+                                               invisible="amount_due &gt; 0"/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </sheet>
                 <chatter/>
             </form>
