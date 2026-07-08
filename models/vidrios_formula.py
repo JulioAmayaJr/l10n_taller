@@ -1,4 +1,5 @@
-from odoo import models, fields, api
+from odoo import models, fields, api, _
+from odoo.exceptions import ValidationError
 
 
 MATERIAL_TYPE = [
@@ -90,6 +91,20 @@ class VidriosFormula(models.Model):
         'Deducción B (cm)', default=0.0,
         help='Centímetros a descontar de la Dimensión B del panel.'
     )
+    glass_divisor_a = fields.Float('Divisor A', default=1.0)
+    glass_divisor_b = fields.Float('Divisor B', default=1.0)
+
+    @api.constrains('glass_divisor_a')
+    def _check_glass_divisor_a(self):
+        for rec in self:
+            if rec.glass_divisor_a <= 0:
+                raise ValidationError(_('El Divisor A debe ser mayor que cero.'))
+
+    @api.constrains('glass_divisor_b')
+    def _check_glass_divisor_b(self):
+        for rec in self:
+            if rec.glass_divisor_b <= 0:
+                raise ValidationError(_('El Divisor B debe ser mayor que cero.'))
 
     # --- Lineal: ahora soporta coeficiente de Largo (depth) ---
     width_coef = fields.Float('Coef. Ancho', default=0.0)
@@ -108,6 +123,7 @@ class VidriosFormula(models.Model):
         'material_type',
         'base_dimension', 'divisor', 'addition', 'deduction',
         'glass_dim_a', 'glass_dim_b', 'glass_width_deduction', 'glass_height_deduction',
+        'glass_divisor_a', 'glass_divisor_b',
         'width_coef', 'height_coef', 'depth_coef', 'linear_constant',
     )
     def _compute_formula_summary(self):
@@ -132,9 +148,13 @@ class VidriosFormula(models.Model):
                 db_key = rec.glass_dim_b or 'height'
                 la = _DIM_LABEL.get(da_key, 'Ancho')
                 lb = _DIM_LABEL.get(db_key, 'Alto')
+                diva = rec.glass_divisor_a or 1.0
+                divb = rec.glass_divisor_b or 1.0
                 da = rec.glass_width_deduction or 0.0
                 db = rec.glass_height_deduction or 0.0
-                s = '%s×%s' % (la, lb)
+                base_a = ('%s/%g' % (la, diva)) if diva != 1.0 else la
+                base_b = ('%s/%g' % (lb, divb)) if divb != 1.0 else lb
+                s = '%s×%s' % (base_a, base_b)
                 if da or db:
                     s += ' -%g/-%g' % (da, db)
                 rec.formula_summary = s
@@ -200,8 +220,10 @@ class VidriosFormula(models.Model):
             db_key = self.glass_dim_b or 'height'
             dim_a = self._resolve_dim(width, height, depth, da_key)
             dim_b = self._resolve_dim(width, height, depth, db_key)
-            cut_a = round(dim_a - (self.glass_width_deduction or 0.0), 2)
-            cut_b = round(dim_b - (self.glass_height_deduction or 0.0), 2)
+            div_a = self.glass_divisor_a if self.glass_divisor_a else 1.0
+            div_b = self.glass_divisor_b if self.glass_divisor_b else 1.0
+            cut_a = round((dim_a / div_a) - (self.glass_width_deduction or 0.0), 2)
+            cut_b = round((dim_b / div_b) - (self.glass_height_deduction or 0.0), 2)
             area = round((cut_a / 100.0) * (cut_b / 100.0), 4)
             return {
                 'size': area,

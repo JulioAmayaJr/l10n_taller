@@ -72,6 +72,12 @@
                                     <field name="formula_summary"
                                            string="Fórmula"
                                            readonly="1"/>
+                                    <field name="glass_divisor_a"
+                                           string="Divisor A"
+                                           invisible="material_type != 'glass'"/>
+                                    <field name="glass_divisor_b"
+                                           string="Divisor B"
+                                           invisible="material_type != 'glass'"/>
                                     <field name="notes" string="Notas" optional="hide"/>
                                 </list>
 
@@ -103,11 +109,17 @@
                                             <field name="glass_dim_a"
                                                    string="Dimensión A (panel)"
                                                    invisible="material_type != 'glass'"/>
+                                            <field name="glass_divisor_a"
+                                                   string="Divisor A"
+                                                   invisible="material_type != 'glass'"/>
                                             <field name="glass_width_deduction"
                                                    string="Deducción A (cm)"
                                                    invisible="material_type != 'glass'"/>
                                             <field name="glass_dim_b"
                                                    string="Dimensión B (panel)"
+                                                   invisible="material_type != 'glass'"/>
+                                            <field name="glass_divisor_b"
+                                                   string="Divisor B"
                                                    invisible="material_type != 'glass'"/>
                                             <field name="glass_height_deduction"
                                                    string="Deducción B (cm)"
