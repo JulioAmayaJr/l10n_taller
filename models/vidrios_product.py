@@ -21,13 +21,13 @@ class VidriosProduct(models.Model):
              'dimensión base de paneles y perfiles.',
     )
     characteristic_ids = fields.One2many(
-        'vidrios.characteristic', 'product_id', string='Características'
+        'vidrios.characteristic', 'product_id', string='Características', copy=True
     )
     formula_ids = fields.One2many(
-        'vidrios.formula', 'product_id', string='Fórmulas de despiece'
+        'vidrios.formula', 'product_id', string='Fórmulas de despiece', copy=True
     )
     price_tier_ids = fields.One2many(
-        'vidrios.price.tier', 'product_id', string='Precios por rango'
+        'vidrios.price.tier', 'product_id', string='Precios por rango', copy=True
     )
     modulo_ids = fields.Many2many(
         'vidrios.product',
@@ -40,6 +40,15 @@ class VidriosProduct(models.Model):
     )
 
     # ------------------------------------------------------------------ #
+
+    def copy_data(self, default=None):
+        vals_list = super().copy_data(default=default)
+        if 'name' in (default or {}):
+            return vals_list
+        return [
+            dict(vals, name=_('%s (copia)') % record.name)
+            for record, vals in zip(self, vals_list)
+        ]
 
     def get_price_for_area(self, area):
         """
